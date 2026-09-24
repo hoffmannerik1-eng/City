@@ -2,24 +2,31 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
-<title>MY CITY — 3D City Simulator</title>
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>City Empire 3D</title>
 
 <style>
 *{
     box-sizing:border-box;
-    margin:0;
-    padding:0;
-    user-select:none;
+    -webkit-tap-highlight-color:transparent;
 }
 
 html,body{
+    margin:0;
     width:100%;
     height:100%;
     overflow:hidden;
-    font-family:Inter,Arial,sans-serif;
-    background:#10141c;
+    background:#071018;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    color:white;
+}
+
+button{
+    font:inherit;
+    border:0;
+    color:white;
+    cursor:pointer;
 }
 
 #game{
@@ -31,767 +38,814 @@ canvas{
     display:block;
 }
 
-#ui{
-    position:fixed;
-    inset:0;
-    pointer-events:none;
-    color:white;
-}
+/* ---------- TOP HUD ---------- */
 
-.topbar{
-    position:absolute;
-    top:18px;
-    left:18px;
-    right:18px;
+#topbar{
+    position:fixed;
+    top:12px;
+    left:12px;
+    right:12px;
+    height:72px;
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:10px;
+    z-index:20;
+    pointer-events:none;
 }
 
-.brand{
-    padding:12px 17px;
-    border-radius:15px;
-    background:rgba(15,20,29,.78);
-    border:1px solid rgba(255,255,255,.12);
-    backdrop-filter:blur(15px);
-    font-weight:1000;
-    font-size:20px;
-    letter-spacing:-1px;
+.logo{
+    height:60px;
+    padding:0 18px;
+    border-radius:20px;
+    background:rgba(8,13,20,.82);
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.1);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-width:160px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+
+.logo strong{
+    font-size:17px;
+    letter-spacing:1px;
+}
+
+.logo span{
+    font-size:10px;
+    opacity:.5;
+    letter-spacing:2px;
 }
 
 .stats{
     display:flex;
     gap:8px;
-    flex-wrap:wrap;
+    overflow:hidden;
+    pointer-events:auto;
 }
 
 .stat{
     min-width:105px;
-    padding:9px 13px;
-    border-radius:13px;
-    background:rgba(15,20,29,.72);
-    border:1px solid rgba(255,255,255,.1);
-    backdrop-filter:blur(15px);
+    height:58px;
+    padding:8px 12px;
+    border-radius:17px;
+    background:rgba(8,13,20,.76);
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.09);
 }
 
 .stat small{
     display:block;
-    color:#8d98a9;
-    font-size:9px;
-    letter-spacing:1.5px;
+    color:#8c9aaa;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
 }
 
-.stat strong{
+.stat b{
     font-size:17px;
 }
 
-#money{
-    color:#70e49a;
+/* ---------- RIGHT BUTTONS ---------- */
+
+#rightButtons{
+    position:fixed;
+    right:14px;
+    top:96px;
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+    z-index:30;
 }
 
-#level{
-    color:#7db8ff;
+.iconBtn{
+    width:48px;
+    height:48px;
+    border-radius:16px;
+    background:rgba(8,13,20,.82);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(15px);
+    font-size:20px;
+    box-shadow:0 8px 25px rgba(0,0,0,.25);
 }
 
-#xpBar{
-    position:absolute;
-    top:82px;
-    left:18px;
-    width:220px;
-    height:6px;
-    background:rgba(0,0,0,.35);
-    border-radius:10px;
-    overflow:hidden;
+.iconBtn:active{
+    transform:scale(.93);
 }
 
-#xpFill{
-    width:0%;
-    height:100%;
-    background:#5fa8ff;
-    transition:.3s;
-}
+/* ---------- BUILD BAR ---------- */
 
-#buildPanel{
-    position:absolute;
-    left:18px;
+#buildBar{
+    position:fixed;
+    left:50%;
     bottom:18px;
-    width:290px;
-    pointer-events:auto;
+    transform:translateX(-50%);
+    z-index:40;
+    width:min(940px,calc(100% - 24px));
+    padding:10px;
+    border-radius:25px;
+    background:rgba(6,11,18,.88);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(22px);
+    box-shadow:0 15px 50px rgba(0,0,0,.4);
 }
 
-.panel{
-    background:rgba(15,20,29,.84);
-    border:1px solid rgba(255,255,255,.12);
-    backdrop-filter:blur(18px);
+.buildScroll{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    scrollbar-width:none;
+}
+
+.buildScroll::-webkit-scrollbar{
+    display:none;
+}
+
+.buildItem{
+    flex:0 0 104px;
+    height:82px;
     border-radius:18px;
-    padding:14px;
-    box-shadow:0 20px 50px rgba(0,0,0,.25);
-}
-
-.panelTitle{
-    font-size:11px;
-    color:#8d98a9;
-    text-transform:uppercase;
-    letter-spacing:2px;
-    margin-bottom:10px;
-}
-
-.buildGrid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:7px;
-}
-
-.buildBtn{
-    min-height:70px;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:12px;
-    background:#202735;
-    color:white;
-    cursor:pointer;
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.07);
+    padding:7px;
+    position:relative;
     transition:.15s;
 }
 
-.buildBtn:hover{
-    background:#293346;
-    transform:translateY(-2px);
+.buildItem:hover{
+    background:rgba(255,255,255,.1);
 }
 
-.buildBtn.active{
-    border-color:#69a9ff;
-    background:#263d5e;
+.buildItem.active{
+    border-color:#43e89c;
+    box-shadow:0 0 0 2px rgba(67,232,156,.18);
 }
 
 .buildIcon{
-    font-size:22px;
+    font-size:29px;
+    line-height:35px;
 }
 
 .buildName{
-    font-size:10px;
-    margin-top:5px;
+    font-size:11px;
+    font-weight:700;
 }
 
-.buildPrice{
-    color:#72df9b;
-    font-size:9px;
-    margin-top:2px;
+.buildCost{
+    font-size:10px;
+    color:#63e6a5;
 }
 
 .locked{
-    opacity:.35;
-    cursor:not-allowed;
+    opacity:.4;
 }
 
-#rightPanel{
+.locked::after{
+    content:"🔒";
     position:absolute;
-    top:110px;
-    right:18px;
-    width:270px;
-    pointer-events:auto;
+    right:7px;
+    top:7px;
+    font-size:13px;
 }
 
-.mission{
-    padding:11px;
-    margin-top:7px;
-    border-radius:11px;
-    background:rgba(255,255,255,.045);
+/* ---------- PANELS ---------- */
+
+.panel{
+    position:fixed;
+    z-index:50;
+    background:rgba(7,12,19,.94);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(25px);
+    box-shadow:0 20px 70px rgba(0,0,0,.5);
+    border-radius:25px;
 }
 
-.missionTitle{
-    font-size:12px;
-    font-weight:800;
-}
-
-.missionDesc{
-    color:#8d98a9;
-    font-size:10px;
-    margin-top:3px;
-}
-
-.missionReward{
-    color:#72df9b;
-    font-size:10px;
-    margin-top:6px;
-}
-
-#hint{
-    position:absolute;
-    left:50%;
-    bottom:25px;
-    transform:translateX(-50%);
-    background:rgba(10,13,18,.75);
-    padding:9px 15px;
-    border-radius:12px;
-    color:#b9c2cf;
-    font-size:11px;
-    backdrop-filter:blur(10px);
-}
-
-#notification{
-    position:absolute;
-    left:50%;
-    top:120px;
-    transform:translateX(-50%) translateY(-15px);
-    opacity:0;
-    background:rgba(16,22,31,.92);
-    border:1px solid rgba(255,255,255,.12);
-    padding:13px 20px;
-    border-radius:14px;
-    font-weight:800;
+#infoPanel{
+    left:16px;
+    top:100px;
+    width:280px;
+    padding:18px;
+    transform:translateX(-330px);
     transition:.25s;
 }
 
-#notification.show{
-    opacity:1;
-    transform:translateX(-50%) translateY(0);
+#infoPanel.open{
+    transform:translateX(0);
 }
 
-#startScreen{
+.panelTitle{
+    font-size:20px;
+    font-weight:800;
+    margin-bottom:5px;
+}
+
+.panelSub{
+    color:#8491a0;
+    font-size:12px;
+    margin-bottom:16px;
+}
+
+.infoRow{
+    display:flex;
+    justify-content:space-between;
+    padding:9px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    font-size:13px;
+}
+
+.dangerBtn{
+    width:100%;
+    margin-top:14px;
+    padding:12px;
+    border-radius:13px;
+    background:#7e2633;
+}
+
+.greenBtn{
+    width:100%;
+    margin-top:10px;
+    padding:12px;
+    border-radius:13px;
+    background:#16865a;
+}
+
+/* ---------- MISSIONS ---------- */
+
+#missionPanel{
+    right:15px;
+    top:95px;
+    width:310px;
+    padding:18px;
+    display:none;
+}
+
+.mission{
+    padding:13px;
+    margin-top:9px;
+    background:rgba(255,255,255,.045);
+    border-radius:15px;
+}
+
+.mission b{
+    font-size:13px;
+}
+
+.mission p{
+    margin:4px 0 0;
+    font-size:11px;
+    color:#8d9aaa;
+}
+
+.progress{
+    height:5px;
+    margin-top:9px;
+    background:#202832;
+    border-radius:5px;
+    overflow:hidden;
+}
+
+.progress i{
+    display:block;
+    height:100%;
+    background:#43e89c;
+}
+
+/* ---------- MENU ---------- */
+
+#menu{
     position:fixed;
     inset:0;
     z-index:100;
-    display:flex;
+    display:none;
     align-items:center;
     justify-content:center;
-    background:
-        radial-gradient(circle at 50% 35%,#284a70 0%,#10141c 48%,#080a0e 100%);
-    color:white;
+    background:rgba(2,5,9,.72);
+    backdrop-filter:blur(15px);
 }
 
-.startBox{
-    width:min(620px,90vw);
-    text-align:center;
+.menuBox{
+    width:min(430px,calc(100% - 28px));
+    padding:26px;
+    border-radius:28px;
+    background:#0a111a;
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 30px 100px rgba(0,0,0,.6);
 }
 
-.logo{
-    font-size:clamp(60px,11vw,110px);
-    font-weight:1000;
-    letter-spacing:-7px;
-    line-height:.8;
+.menuBox h1{
+    margin:0 0 4px;
+    font-size:28px;
 }
 
-.logo span{
-    color:#62a9ff;
+.menuBox p{
+    color:#8793a0;
+    font-size:13px;
 }
 
-.startSub{
-    margin-top:20px;
-    color:#8f9bad;
-    letter-spacing:4px;
-    font-size:11px;
+.menuButton{
+    width:100%;
+    padding:15px;
+    margin-top:9px;
+    border-radius:15px;
+    background:#151f2a;
+    text-align:left;
 }
 
-.startBtn{
-    margin-top:42px;
-    padding:17px 55px;
-    border:0;
-    border-radius:14px;
-    background:#fff;
-    color:#111722;
-    font-size:16px;
-    font-weight:1000;
-    cursor:pointer;
+.menuButton:hover{
+    background:#1b2937;
 }
 
-.startBtn:hover{
-    transform:translateY(-2px);
+.menuButton.primary{
+    background:#17885b;
 }
 
-.controls{
-    margin-top:25px;
-    color:#687487;
-    font-size:11px;
-    line-height:1.8;
-}
+/* ---------- NOTIFICATIONS ---------- */
 
-#mobileControls{
-    display:none;
-    position:absolute;
-    inset:0;
+#notifications{
+    position:fixed;
+    top:95px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:80;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:7px;
     pointer-events:none;
 }
 
-.mobileBtn{
-    position:absolute;
-    width:65px;
-    height:65px;
-    border-radius:18px;
-    border:1px solid rgba(255,255,255,.15);
-    background:rgba(10,15,23,.55);
-    color:white;
-    font-size:24px;
-    pointer-events:auto;
+.notice{
+    padding:11px 16px;
+    border-radius:14px;
+    background:rgba(5,10,16,.9);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    font-size:13px;
+    animation:noticeIn .25s ease;
 }
 
-#mLeft{
-    bottom:25px;
-    left:20px;
+@keyframes noticeIn{
+    from{opacity:0;transform:translateY(-10px) scale(.95)}
+    to{opacity:1;transform:translateY(0) scale(1)}
 }
 
-#mRight{
-    bottom:25px;
-    left:95px;
+/* ---------- BUILD MODE ---------- */
+
+#buildHint{
+    position:fixed;
+    top:88px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:25;
+    display:none;
+    padding:10px 15px;
+    border-radius:14px;
+    background:rgba(7,12,18,.86);
+    border:1px solid rgba(67,232,156,.35);
+    font-size:12px;
 }
 
-#mForward{
-    bottom:100px;
-    right:95px;
-}
+/* ---------- MOBILE ---------- */
 
-#mBack{
-    bottom:25px;
-    right:20px;
-}
+@media(max-width:700px){
 
-@media(max-width:850px){
-
-    .stats .stat:nth-child(3){
-        display:none;
+    #topbar{
+        top:7px;
+        left:7px;
+        right:7px;
+        height:58px;
     }
 
-    #buildPanel{
-        width:250px;
+    .logo{
+        min-width:115px;
+        height:52px;
+        padding:0 12px;
     }
 
-    #rightPanel{
-        width:220px;
-    }
-
-    #mobileControls{
-        display:block;
-    }
-
-    #hint{
-        display:none;
-    }
-}
-
-@media(max-width:600px){
-
-    .brand{
-        font-size:15px;
-    }
-
-    .stat{
-        min-width:75px;
-        padding:7px 9px;
-    }
-
-    .stat strong{
+    .logo strong{
         font-size:13px;
     }
 
-    #rightPanel{
-        top:90px;
-        right:10px;
-        width:180px;
-        transform:scale(.9);
-        transform-origin:top right;
+    .stat{
+        min-width:83px;
+        height:50px;
+        padding:6px 9px;
     }
 
-    #buildPanel{
-        left:10px;
-        bottom:10px;
-        width:230px;
-        transform:scale(.85);
-        transform-origin:bottom left;
+    .stat b{
+        font-size:14px;
     }
 
-    #xpBar{
-        top:67px;
+    #rightButtons{
+        top:76px;
+        right:8px;
     }
+
+    .iconBtn{
+        width:43px;
+        height:43px;
+    }
+
+    #buildBar{
+        bottom:8px;
+        width:calc(100% - 12px);
+        border-radius:20px;
+    }
+
+    .buildItem{
+        flex-basis:88px;
+        height:76px;
+    }
+
+    #infoPanel{
+        left:7px;
+        top:72px;
+        width:calc(100% - 14px);
+        transform:translateY(-420px);
+    }
+
+    #infoPanel.open{
+        transform:translateY(0);
+    }
+
+    #missionPanel{
+        right:7px;
+        left:7px;
+        top:70px;
+        width:auto;
+    }
+}
+
+/* ---------- LOADING ---------- */
+
+#loading{
+    position:fixed;
+    inset:0;
+    z-index:999;
+    background:#050a10;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+.loaderOrb{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.08);
+    border-top-color:#43e89c;
+    animation:spin 1s linear infinite;
+}
+
+#loading h1{
+    margin-top:20px;
+    font-size:22px;
+}
+
+#loading span{
+    color:#6f7d8b;
+    font-size:12px;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
 }
 </style>
 </head>
 
 <body>
 
+<div id="loading">
+    <div class="loaderOrb"></div>
+    <h1>CITY EMPIRE</h1>
+    <span>Stadt wird geladen...</span>
+</div>
+
 <div id="game"></div>
 
-<div id="ui">
+<!-- TOP -->
 
-    <div class="topbar">
+<div id="topbar">
+    <div class="logo">
+        <strong>🏙️ CITY EMPIRE</strong>
+        <span>BUILD • GROW • RULE</span>
+    </div>
 
-        <div class="brand">
-            MY<span style="color:#65aaff">CITY</span>
+    <div class="stats">
+        <div class="stat">
+            <small>Geld</small>
+            <b id="money">€ 0</b>
         </div>
 
-        <div class="stats">
-
-            <div class="stat">
-                <small>MONEY</small>
-                <strong id="money">€ 10,000</strong>
-            </div>
-
-            <div class="stat">
-                <small>LEVEL</small>
-                <strong id="level">1</strong>
-            </div>
-
-            <div class="stat">
-                <small>POPULATION</small>
-                <strong id="population">0</strong>
-            </div>
-
-            <div class="stat">
-                <small>BUILDINGS</small>
-                <strong id="buildings">0</strong>
-            </div>
-
+        <div class="stat">
+            <small>Einwohner</small>
+            <b id="population">0</b>
         </div>
 
-    </div>
-
-    <div id="xpBar">
-        <div id="xpFill"></div>
-    </div>
-
-    <div id="buildPanel">
-
-        <div class="panel">
-
-            <div class="panelTitle">
-                Build
-            </div>
-
-            <div class="buildGrid">
-
-                <button class="buildBtn active" data-type="house">
-                    <div class="buildIcon">🏠</div>
-                    <div class="buildName">Haus</div>
-                    <div class="buildPrice">€ 500</div>
-                </button>
-
-                <button class="buildBtn" data-type="shop">
-                    <div class="buildIcon">🏪</div>
-                    <div class="buildName">Shop</div>
-                    <div class="buildPrice">€ 1,200</div>
-                </button>
-
-                <button class="buildBtn locked" data-type="office">
-                    <div class="buildIcon">🏢</div>
-                    <div class="buildName">Büro</div>
-                    <div class="buildPrice">Lvl 3</div>
-                </button>
-
-                <button class="buildBtn locked" data-type="tower">
-                    <div class="buildIcon">🏙️</div>
-                    <div class="buildName">Tower</div>
-                    <div class="buildPrice">Lvl 5</div>
-                </button>
-
-                <button class="buildBtn locked" data-type="park">
-                    <div class="buildIcon">🌳</div>
-                    <div class="buildName">Park</div>
-                    <div class="buildPrice">Lvl 2</div>
-                </button>
-
-                <button class="buildBtn locked" data-type="station">
-                    <div class="buildIcon">🚉</div>
-                    <div class="buildName">Station</div>
-                    <div class="buildPrice">Lvl 4</div>
-                </button>
-
-            </div>
-
+        <div class="stat">
+            <small>Stufe</small>
+            <b id="level">1</b>
         </div>
 
-    </div>
-
-    <div id="rightPanel">
-
-        <div class="panel">
-
-            <div class="panelTitle">
-                City Missions
-            </div>
-
-            <div class="mission">
-
-                <div class="missionTitle">
-                    🏘️ Erste Nachbarschaft
-                </div>
-
-                <div class="missionDesc">
-                    Baue 5 Häuser.
-                </div>
-
-                <div class="missionReward">
-                    +€ 2,000 · +100 XP
-                </div>
-
-            </div>
-
-            <div class="mission">
-
-                <div class="missionTitle">
-                    🏪 Innenstadt
-                </div>
-
-                <div class="missionDesc">
-                    Baue 2 Shops.
-                </div>
-
-                <div class="missionReward">
-                    +€ 3,500 · +150 XP
-                </div>
-
-            </div>
-
-            <div class="mission">
-
-                <div class="missionTitle">
-                    🌆 Großstadt
-                </div>
-
-                <div class="missionDesc">
-                    Erreiche Level 5.
-                </div>
-
-                <div class="missionReward">
-                    +€ 10,000 · +500 XP
-                </div>
-
-            </div>
-
+        <div class="stat">
+            <small>Glück</small>
+            <b id="happiness">75%</b>
         </div>
-
     </div>
-
-    <div id="notification">
-        Stadt gespeichert
-    </div>
-
-    <div id="hint">
-        WASD / Pfeiltasten · Linksklick = Gebäude platzieren · ESC = Bauen abbrechen
-    </div>
-
-    <div id="mobileControls">
-
-        <button class="mobileBtn" id="mLeft">◀</button>
-        <button class="mobileBtn" id="mRight">▶</button>
-        <button class="mobileBtn" id="mForward">▲</button>
-        <button class="mobileBtn" id="mBack">▼</button>
-
-    </div>
-
 </div>
 
+<!-- RIGHT -->
 
-<div id="startScreen">
+<div id="rightButtons">
+    <button class="iconBtn" id="missionBtn">🎯</button>
+    <button class="iconBtn" id="infoBtn">ⓘ</button>
+    <button class="iconBtn" id="rotateBtn">↻</button>
+    <button class="iconBtn" id="demolishBtn">🗑️</button>
+    <button class="iconBtn" id="menuBtn">☰</button>
+</div>
 
-    <div class="startBox">
+<div id="buildHint">
+    Gebäude platzieren · Tippen/Klicken zum Bauen · ESC zum Abbrechen
+</div>
 
-        <div class="logo">
-            MY<br><span>CITY</span>
-        </div>
+<!-- INFO -->
 
-        <div class="startSub">
-            3D CITY LIFE SIMULATOR
-        </div>
+<div id="infoPanel" class="panel">
+    <div class="panelTitle" id="infoName">Stadt</div>
+    <div class="panelSub" id="infoType">Wähle ein Gebäude</div>
 
-        <button class="startBtn" id="startBtn">
-            STADT BETRETEN
+    <div id="infoContent"></div>
+
+    <button id="closeInfo" class="greenBtn">Schließen</button>
+    <button id="deleteSelected" class="dangerBtn">Gebäude abreißen</button>
+</div>
+
+<!-- MISSIONS -->
+
+<div id="missionPanel" class="panel">
+    <div class="panelTitle">🎯 Missionen</div>
+    <div class="panelSub">Erfülle Ziele und verdiene Belohnungen.</div>
+    <div id="missions"></div>
+</div>
+
+<!-- BUILD -->
+
+<div id="buildBar">
+    <div class="buildScroll" id="buildItems"></div>
+</div>
+
+<!-- MENU -->
+
+<div id="menu">
+    <div class="menuBox">
+        <h1>City Empire</h1>
+        <p>Deine Stadt. Deine Entscheidungen.</p>
+
+        <button class="menuButton primary" id="resumeBtn">
+            ▶️ Weiter
         </button>
 
-        <div class="controls">
-            WASD / PFEILTASTEN · FREIE KAMERA<br>
-            BAUE · VERDIENE · LEVEL AUF · ERWEITERE DEINE STADT<br>
-            DEIN SPIELSTAND WIRD AUTOMATISCH GESPEICHERT
-        </div>
+        <button class="menuButton" id="saveBtn">
+            💾 Stadt speichern
+        </button>
 
+        <button class="menuButton" id="newBtn">
+            🆕 Neue Stadt
+        </button>
+
+        <button class="menuButton" id="closeMenu">
+            ✕ Schließen
+        </button>
     </div>
-
 </div>
 
+<div id="notifications"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-
 /* =========================================================
-   MY CITY
+   CITY EMPIRE 3D
    ========================================================= */
-
-const game = document.getElementById("game");
 
 let scene;
 let camera;
 let renderer;
-
-let raycaster;
-let mouse;
-
 let clock;
 
 let ground;
+let sun;
+let ambient;
 
-let selectedType = "house";
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
 
-let preview = null;
-
-let started = false;
-
-let cityObjects = [];
-
+let buildings = [];
+let roads = [];
 let cars = [];
+let trees = [];
 
-let keys = {
-    w:false,
-    a:false,
-    s:false,
-    d:false
+let selectedObject = null;
+let previewObject = null;
+let buildMode = null;
+let buildRotation = 0;
+
+let paused = false;
+let cameraTarget = new THREE.Vector3(0,0,0);
+
+let state = {
+    money: 25000,
+    population: 0,
+    happiness: 75,
+    level: 1,
+    xp: 0,
+    day: 1,
+    hour: 9,
+    buildings: 0,
+    roads: 0
 };
 
-let player = {
-    x:0,
-    y:8,
-    z:20,
-    rot:0
-};
-
-
-/* =========================================================
-   GAME DATA
-   ========================================================= */
-
-const saveKey = "MY_CITY_SAVE_V1";
-
-const defaultState = {
-
-    money:10000,
-
-    level:1,
-
-    xp:0,
-
-    population:0,
-
-    buildings:[],
-
-    completed:[],
-
-    time:12
-
-};
-
-let state;
-
+const SAVE_KEY = "city_empire_3d_save_v2";
 
 /* =========================================================
    BUILDINGS
    ========================================================= */
 
-const buildings = {
+const BUILDINGS = {
 
     house:{
-        name:"Haus",
-        price:500,
+        name:"Wohnhaus",
+        icon:"🏠",
+        cost:1200,
+        population:8,
+        income:30,
         xp:25,
-        population:5,
-        unlock:1
+        unlock:1,
+        color:0x6d8fd8,
+        width:5,
+        depth:5,
+        height:5
+    },
+
+    apartment:{
+        name:"Apartment",
+        icon:"🏢",
+        cost:4200,
+        population:32,
+        income:95,
+        xp:70,
+        unlock:2,
+        color:0x8798a8,
+        width:7,
+        depth:7,
+        height:13
     },
 
     shop:{
-        name:"Shop",
-        price:1200,
-        xp:50,
-        population:8,
-        unlock:1
+        name:"Geschäft",
+        icon:"🏪",
+        cost:3500,
+        population:2,
+        income:180,
+        xp:60,
+        unlock:1,
+        color:0xe49b55,
+        width:6,
+        depth:6,
+        height:6
     },
 
     office:{
         name:"Büro",
-        price:2500,
-        xp:100,
-        population:20,
-        unlock:3
-    },
-
-    tower:{
-        name:"Tower",
-        price:7000,
-        xp:250,
-        population:70,
-        unlock:5
+        icon:"🏢",
+        cost:8500,
+        population:5,
+        income:420,
+        xp:120,
+        unlock:3,
+        color:0x4e91aa,
+        width:8,
+        depth:8,
+        height:18
     },
 
     park:{
         name:"Park",
-        price:900,
-        xp:60,
-        population:15,
-        unlock:2
+        icon:"🌳",
+        cost:1800,
+        population:0,
+        income:0,
+        xp:45,
+        unlock:1,
+        color:0x3d9b60,
+        width:9,
+        depth:9,
+        height:0.4
     },
 
-    station:{
-        name:"Bahnhof",
-        price:5000,
-        xp:180,
-        population:40,
-        unlock:4
-    }
+    school:{
+        name:"Schule",
+        icon:"🏫",
+        cost:9000,
+        population:0,
+        income:-60,
+        xp:140,
+        unlock:4,
+        color:0xd7b76b,
+        width:10,
+        depth:8,
+        height:6
+    },
 
+    hospital:{
+        name:"Krankenhaus",
+        icon:"🏥",
+        cost:18000,
+        population:0,
+        income:-120,
+        xp:220,
+        unlock:5,
+        color:0xdce5e9,
+        width:12,
+        depth:10,
+        height:9
+    },
+
+    tower:{
+        name:"Wolkenkratzer",
+        icon:"🏙️",
+        cost:40000,
+        population:110,
+        income:850,
+        xp:450,
+        unlock:7,
+        color:0x426c9e,
+        width:11,
+        depth:11,
+        height:38
+    },
+
+    stadium:{
+        name:"Stadion",
+        icon:"🏟️",
+        cost:55000,
+        population:0,
+        income:500,
+        xp:650,
+        unlock:9,
+        color:0x536d5a,
+        width:20,
+        depth:16,
+        height:6
+    }
 };
 
-
 /* =========================================================
-   LOAD SAVE
+   MISSIONS
    ========================================================= */
 
-function loadGame(){
-
-    try{
-
-        const saved =
-            localStorage.getItem(saveKey);
-
-        if(saved){
-
-            state =
-                Object.assign(
-                    {},
-                    defaultState,
-                    JSON.parse(saved)
-                );
-
-        }else{
-
-            state =
-                JSON.parse(
-                    JSON.stringify(
-                        defaultState
-                    )
-                );
-        }
-
-    }catch(e){
-
-        state =
-            JSON.parse(
-                JSON.stringify(
-                    defaultState
-                )
-            );
+const MISSION_DATA = [
+    {
+        id:"houses",
+        title:"Erste Nachbarn",
+        text:"Baue 3 Wohnhäuser.",
+        goal:3,
+        reward:2500,
+        xp:100,
+        type:"house"
+    },
+    {
+        id:"people",
+        title:"Kleine Gemeinde",
+        text:"Erreiche 50 Einwohner.",
+        goal:50,
+        reward:5000,
+        xp:150,
+        type:"population"
+    },
+    {
+        id:"shops",
+        title:"Innenstadt",
+        text:"Baue 2 Geschäfte.",
+        goal:2,
+        reward:6500,
+        xp:200,
+        type:"shop"
+    },
+    {
+        id:"level5",
+        title:"Wachsende Stadt",
+        text:"Erreiche Level 5.",
+        goal:5,
+        reward:12000,
+        xp:350,
+        type:"level"
     }
+];
 
-}
-
-
-/* =========================================================
-   SAVE
-   ========================================================= */
-
-function saveGame(){
-
-    localStorage.setItem(
-        saveKey,
-        JSON.stringify(state)
-    );
-
-    notify("✓ Stadt gespeichert");
-}
-
+let completedMissions = [];
 
 /* =========================================================
    INIT
@@ -799,137 +853,88 @@ function saveGame(){
 
 function init(){
 
-    loadGame();
+    scene = new THREE.Scene();
 
-    scene =
-        new THREE.Scene();
+    scene.background = new THREE.Color(0x87b9d4);
 
-    scene.background =
-        new THREE.Color(
-            0x8dbce2
-        );
+    clock = new THREE.Clock();
 
-    scene.fog =
-        new THREE.Fog(
-            0x8dbce2,
-            80,
-            600
-        );
-
-
-    camera =
-        new THREE.PerspectiveCamera(
-            60,
-            innerWidth/innerHeight,
-            .1,
-            2000
-        );
-
-    camera.position.set(
-        0,
-        18,
-        25
+    camera = new THREE.PerspectiveCamera(
+        55,
+        innerWidth / innerHeight,
+        0.1,
+        2500
     );
 
+    camera.position.set(65,65,65);
+    camera.lookAt(0,0,0);
 
-    renderer =
-        new THREE.WebGLRenderer({
-            antialias:true,
-            powerPreference:
-                "high-performance"
-        });
+    renderer = new THREE.WebGLRenderer({
+        antialias:true,
+        powerPreference:"high-performance"
+    });
 
-    renderer.setSize(
-        innerWidth,
-        innerHeight
-    );
+    renderer.setSize(innerWidth,innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));
 
-    renderer.setPixelRatio(
-        Math.min(
-            devicePixelRatio,
-            1.7
-        )
-    );
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    renderer.shadowMap.enabled=true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    renderer.shadowMap.type =
-        THREE.PCFSoftShadowMap;
+    document.getElementById("game").appendChild(renderer.domElement);
 
-    game.appendChild(
-        renderer.domElement
-    );
-
-
-    raycaster =
-        new THREE.Raycaster();
-
-    mouse =
-        new THREE.Vector2();
-
-    clock =
-        new THREE.Clock();
-
-
-    createLighting();
-
+    setupLights();
     createWorld();
-
     createRoadNetwork();
+    createStartingCity();
+    createCars();
+    setupBuildMenu();
+    setupEvents();
+    setupMissions();
 
-    createBuildingsFromSave();
-
-    createTraffic();
-
-    createPreview();
+    loadGame();
 
     updateUI();
 
+    document.getElementById("loading").style.display="none";
+
     animate();
 }
-
 
 /* =========================================================
    LIGHT
    ========================================================= */
 
-function createLighting(){
+function setupLights(){
 
-    const hemi =
-        new THREE.HemisphereLight(
-            0xdcecff,
-            0x52604e,
-            2.3
-        );
-
-    scene.add(hemi);
-
-
-    const sun =
-        new THREE.DirectionalLight(
-            0xffffff,
-            3
-        );
-
-    sun.position.set(
-        -100,
-        180,
-        100
+    ambient = new THREE.HemisphereLight(
+        0xbfdfff,
+        0x304030,
+        1.4
     );
 
-    sun.castShadow=true;
+    scene.add(ambient);
 
-    sun.shadow.mapSize.width=2048;
-    sun.shadow.mapSize.height=2048;
+    sun = new THREE.DirectionalLight(
+        0xffffff,
+        2.2
+    );
 
-    sun.shadow.camera.left=-300;
-    sun.shadow.camera.right=300;
-    sun.shadow.camera.top=300;
-    sun.shadow.camera.bottom=-300;
+    sun.position.set(100,180,80);
+
+    sun.castShadow = true;
+
+    sun.shadow.mapSize.width = 2048;
+    sun.shadow.mapSize.height = 2048;
+
+    sun.shadow.camera.left = -300;
+    sun.shadow.camera.right = 300;
+    sun.shadow.camera.top = 300;
+    sun.shadow.camera.bottom = -300;
 
     scene.add(sun);
 }
-
 
 /* =========================================================
    WORLD
@@ -937,1250 +942,1404 @@ function createLighting(){
 
 function createWorld(){
 
-    const geo =
-        new THREE.PlaneGeometry(
-            1600,
-            1600
-        );
+    const groundGeo = new THREE.PlaneGeometry(
+        1200,
+        1200
+    );
 
-    const mat =
-        new THREE.MeshStandardMaterial({
-            color:0x628e63,
-            roughness:1
-        });
+    const groundMat = new THREE.MeshStandardMaterial({
+        color:0x416a45,
+        roughness:1
+    });
 
-    ground =
-        new THREE.Mesh(
-            geo,
-            mat
-        );
+    ground = new THREE.Mesh(
+        groundGeo,
+        groundMat
+    );
 
-    ground.rotation.x=
-        -Math.PI/2;
-
-    ground.receiveShadow=true;
-
-    ground.userData.ground=true;
+    ground.rotation.x = -Math.PI/2;
+    ground.receiveShadow = true;
 
     scene.add(ground);
 
+    /* water */
 
-    /* city tiles */
+    const waterGeo = new THREE.PlaneGeometry(300,220);
 
-    for(let x=-200;x<=200;x+=20){
+    const waterMat = new THREE.MeshStandardMaterial({
+        color:0x2f8ca7,
+        roughness:.25,
+        metalness:.1
+    });
 
-        for(let z=-200;z<=200;z+=20){
+    const water = new THREE.Mesh(
+        waterGeo,
+        waterMat
+    );
 
-            const tile =
-                new THREE.Mesh(
-                    new THREE.PlaneGeometry(
-                        19.5,
-                        19.5
-                    ),
-                    new THREE.MeshLambertMaterial({
-                        color:
-                            Math.random()>.5
-                            ?0x679467
-                            :0x628d62
-                    })
-                );
+    water.rotation.x = -Math.PI/2;
+    water.position.set(-260,0.02,120);
 
-            tile.rotation.x=
-                -Math.PI/2;
-
-            tile.position.set(
-                x,
-                .02,
-                z
-            );
-
-            tile.receiveShadow=true;
-
-            scene.add(tile);
-        }
-    }
-
+    scene.add(water);
 
     /* distant hills */
 
-    for(let i=0;i<30;i++){
+    for(let i=0;i<18;i++){
 
-        const hill =
-            new THREE.Mesh(
-                new THREE.ConeGeometry(
-                    20+Math.random()*30,
-                    30+Math.random()*40,
-                    8
-                ),
-                new THREE.MeshLambertMaterial({
-                    color:0x557c58
-                })
-            );
+        const h = 15 + Math.random()*35;
+        const r = 25 + Math.random()*25;
+
+        const geo = new THREE.ConeGeometry(
+            r,
+            h,
+            8
+        );
+
+        const mat = new THREE.MeshStandardMaterial({
+            color:0x3f6848
+        });
+
+        const hill = new THREE.Mesh(geo,mat);
 
         hill.position.set(
-            -400+
-                Math.random()*800,
-            15,
-            -450+
-                Math.random()*200
+            -500 + Math.random()*1000,
+            h/2,
+            -400 + Math.random()*800
         );
 
         scene.add(hill);
     }
 }
 
-
 /* =========================================================
    ROADS
    ========================================================= */
 
-function createRoadNetwork(){
+function createRoad(x,z,w,d){
 
-    for(let i=-200;i<=200;i+=40){
-
-        createRoad(
-            0,
-            i,
-            400,
-            9,
-            0
-        );
-
-        createRoad(
-            i,
-            0,
-            9,
-            400,
-            0
-        );
-    }
-
-
-    /* road markings */
-
-    for(let i=-200;i<=200;i+=20){
-
-        const line =
-            new THREE.Mesh(
-                new THREE.BoxGeometry(
-                    .18,
-                    .03,
-                    8
-                ),
-                new THREE.MeshBasicMaterial({
-                    color:0xffdf7c
-                })
-            );
-
-        line.position.set(
-            0,
-            .06,
-            i
-        );
-
-        scene.add(line);
-    }
-}
-
-
-function createRoad(
-    x,
-    z,
-    width,
-    length,
-    rotation
-){
-
-    const road =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                width,
-                .12,
-                length
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x343b45,
-                roughness:.9
-            })
-        );
-
-    road.position.set(
-        x,
-        .04,
-        z
+    const geo = new THREE.BoxGeometry(
+        w,
+        .12,
+        d
     );
 
-    road.rotation.y=
-        rotation;
+    const mat = new THREE.MeshStandardMaterial({
+        color:0x20252b,
+        roughness:.95
+    });
 
+    const road = new THREE.Mesh(geo,mat);
+
+    road.position.set(x,.06,z);
     road.receiveShadow=true;
 
     scene.add(road);
+
+    roads.push(road);
+
+    /* road markings */
+
+    if(w > d){
+
+        for(let i=-w/2+5;i<w/2;i+=8){
+
+            const lineGeo =
+                new THREE.BoxGeometry(4,.03,.14);
+
+            const lineMat =
+                new THREE.MeshBasicMaterial({
+                    color:0xe7d38a
+                });
+
+            const line =
+                new THREE.Mesh(lineGeo,lineMat);
+
+            line.position.set(
+                x+i,
+                .13,
+                z
+            );
+
+            scene.add(line);
+        }
+
+    }else{
+
+        for(let i=-d/2+5;i<d/2;i+=8){
+
+            const lineGeo =
+                new THREE.BoxGeometry(.14,.03,4);
+
+            const lineMat =
+                new THREE.MeshBasicMaterial({
+                    color:0xe7d38a
+                });
+
+            const line =
+                new THREE.Mesh(lineGeo,lineMat);
+
+            line.position.set(
+                x,
+                .13,
+                z+i
+            );
+
+            scene.add(line);
+        }
+    }
 }
 
+function createRoadNetwork(){
+
+    createRoad(0,0,420,9);
+    createRoad(0,0,9,420);
+
+    createRoad(0,70,420,9);
+    createRoad(0,-70,420,9);
+
+    createRoad(70,0,9,420);
+    createRoad(-70,0,9,420);
+
+    createRoad(0,140,420,9);
+    createRoad(140,0,9,420);
+
+    state.roads = roads.length;
+}
 
 /* =========================================================
-   BUILDING CREATION
+   TREES
    ========================================================= */
 
-function createBuilding(
-    type,
-    x,
-    z,
-    rotation=0
-){
+function createTree(x,z,scale=1){
 
-    const data =
-        buildings[type];
+    const group = new THREE.Group();
 
-    if(!data)
-        return null;
-
-    const group =
-        new THREE.Group();
-
-    group.userData.type=type;
-
-    if(type==="house")
-        createHouse(group);
-
-    if(type==="shop")
-        createShop(group);
-
-    if(type==="office")
-        createOffice(group);
-
-    if(type==="tower")
-        createTower(group);
-
-    if(type==="park")
-        createPark(group);
-
-    if(type==="station")
-        createStation(group);
-
-
-    group.position.set(
-        x,
-        0,
-        z
+    const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            .35*scale,
+            .5*scale,
+            2.4*scale,
+            8
+        ),
+        new THREE.MeshStandardMaterial({
+            color:0x68482e
+        })
     );
 
-    group.rotation.y=rotation;
+    trunk.position.y=1.2*scale;
+    trunk.castShadow=true;
 
-    group.traverse(
-        object=>{
+    group.add(trunk);
 
-            if(object.isMesh){
+    const crown = new THREE.Mesh(
+        new THREE.SphereGeometry(
+            2.2*scale,
+            8,
+            7
+        ),
+        new THREE.MeshStandardMaterial({
+            color:0x3c8750
+        })
+    );
 
-                object.castShadow=true;
-                object.receiveShadow=true;
+    crown.position.y=3.3*scale;
+    crown.castShadow=true;
+
+    group.add(crown);
+
+    group.position.set(x,0,z);
+
+    scene.add(group);
+    trees.push(group);
+}
+
+/* =========================================================
+   BUILDING
+   ========================================================= */
+
+function createBuilding(type,x,z,rotation=0){
+
+    const data = BUILDINGS[type];
+
+    const group = new THREE.Group();
+
+    group.userData = {
+        type,
+        building:true
+    };
+
+    const bodyGeo = new THREE.BoxGeometry(
+        data.width,
+        Math.max(data.height,.5),
+        data.depth
+    );
+
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color:data.color,
+        roughness:.75,
+        metalness:.05
+    });
+
+    const body = new THREE.Mesh(
+        bodyGeo,
+        bodyMat
+    );
+
+    body.position.y = data.height/2 + .15;
+    body.castShadow=true;
+    body.receiveShadow=true;
+
+    group.add(body);
+
+    /* windows */
+
+    if(data.height > 3){
+
+        const floors = Math.max(
+            1,
+            Math.floor(data.height/3)
+        );
+
+        for(let floor=0;floor<floors;floor++){
+
+            const y = 1.4 + floor*3;
+
+            const count = Math.max(
+                2,
+                Math.floor(data.width/2)
+            );
+
+            for(let i=0;i<count;i++){
+
+                const x =
+                    -data.width/2 + 1.2 +
+                    i*((data.width-2.4)/(count-1));
+
+                const winGeo =
+                    new THREE.BoxGeometry(
+                        .65,
+                        .9,
+                        .06
+                    );
+
+                const winMat =
+                    new THREE.MeshStandardMaterial({
+                        color:0x8ed2df,
+                        emissive:0x173c42,
+                        emissiveIntensity:.2,
+                        metalness:.2
+                    });
+
+                const win =
+                    new THREE.Mesh(winGeo,winMat);
+
+                win.position.set(
+                    x,
+                    y,
+                    data.depth/2+.04
+                );
+
+                group.add(win);
             }
         }
-    );
+    }
+
+    /* roof */
+
+    if(type==="house" || type==="shop"){
+
+        const roof = new THREE.Mesh(
+            new THREE.ConeGeometry(
+                Math.max(data.width,data.depth)*.72,
+                2.2,
+                4
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x343940
+            })
+        );
+
+        roof.rotation.y=Math.PI/4;
+
+        roof.position.y=data.height+1.2;
+
+        group.add(roof);
+    }
+
+    /* park */
+
+    if(type==="park"){
+
+        for(let i=0;i<6;i++){
+
+            createTree(
+                x-data.width/2+1.5+
+                Math.random()*(data.width-3),
+                z-data.depth/2+1.5+
+                Math.random()*(data.depth-3),
+                .65+Math.random()*.35
+            );
+        }
+
+        const benchGeo =
+            new THREE.BoxGeometry(2,.35,.6);
+
+        const benchMat =
+            new THREE.MeshStandardMaterial({
+                color:0x7a5737
+            });
+
+        for(let i=0;i<2;i++){
+
+            const bench =
+                new THREE.Mesh(benchGeo,benchMat);
+
+            bench.position.set(
+                x-2+i*4,
+                .7,
+                z
+            );
+
+            scene.add(bench);
+        }
+    }
+
+    group.position.set(x,0,z);
+    group.rotation.y=rotation;
 
     scene.add(group);
 
-    cityObjects.push(group);
+    buildings.push(group);
 
     return group;
 }
 
-
 /* =========================================================
-   HOUSE
+   STARTING CITY
    ========================================================= */
 
-function createHouse(g){
-
-    const body =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                10,
-                7,
-                9
-            ),
-            new THREE.MeshStandardMaterial({
-                color:
-                    [0xe5d4bd,
-                     0xc7d8df,
-                     0xd9c6d5]
-                    [Math.floor(Math.random()*3)]
-            })
-        );
-
-    body.position.y=3.5;
-
-    g.add(body);
-
-
-    const roof =
-        new THREE.Mesh(
-            new THREE.ConeGeometry(
-                7.5,
-                4,
-                4
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x4b4f58
-            })
-        );
-
-    roof.rotation.y=
-        Math.PI/4;
-
-    roof.position.y=9;
-
-    g.add(roof);
-
-
-    addWindows(
-        g,
-        4.2,
-        2.7
-    );
-
-
-    addDoor(
-        g,
-        0,
-        1.2,
-        4.55
-    );
-}
-
-
-/* =========================================================
-   SHOP
-   ========================================================= */
-
-function createShop(g){
-
-    const body =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                12,
-                6,
-                10
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0xdfe5eb
-            })
-        );
-
-    body.position.y=3;
-
-    g.add(body);
-
-
-    const glass =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                10,
-                3,
-                .12
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x54a8c7,
-                metalness:.25,
-                roughness:.1
-            })
-        );
-
-    glass.position.set(
-        0,
-        2.4,
-        5.05
-    );
-
-    g.add(glass);
-
-
-    const sign =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                8,
-                1.2,
-                .2
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0xf2a83b
-            })
-        );
-
-    sign.position.set(
-        0,
-        5.3,
-        5.15
-    );
-
-    g.add(sign);
-
-
-    addDoor(
-        g,
-        0,
-        1.2,
-        5.15
-    );
-}
-
-
-/* =========================================================
-   OFFICE
-   ========================================================= */
-
-function createOffice(g){
-
-    const body =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                13,
-                30,
-                12
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x71808f,
-                metalness:.15
-            })
-        );
-
-    body.position.y=15;
-
-    g.add(body);
-
-
-    for(
-        let y=4;
-        y<29;
-        y+=4
-    ){
-
-        for(
-            let x=-4;
-            x<=4;
-            x+=4
-        ){
-
-            const window =
-                new THREE.Mesh(
-                    new THREE.BoxGeometry(
-                        2.2,
-                        2,
-                        .12
-                    ),
-                    new THREE.MeshStandardMaterial({
-                        color:
-                            Math.random()>.25
-                            ?0x8ed5ed
-                            :0x29333d,
-                        emissive:
-                            Math.random()>.8
-                            ?0x345e65
-                            :0x000000
-                    })
-                );
-
-            window.position.set(
-                x,
-                y,
-                6.08
-            );
-
-            g.add(window);
-        }
-    }
-}
-
-
-/* =========================================================
-   TOWER
-   ========================================================= */
-
-function createTower(g){
-
-    const body =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                18,
-                65,
-                18
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x5e748a,
-                metalness:.25,
-                roughness:.35
-            })
-        );
-
-    body.position.y=32.5;
-
-    g.add(body);
-
-
-    for(
-        let y=5;
-        y<62;
-        y+=5
-    ){
-
-        const strip =
-            new THREE.Mesh(
-                new THREE.BoxGeometry(
-                    15,
-                    1.6,
-                    .18
-                ),
-                new THREE.MeshBasicMaterial({
-                    color:
-                        Math.random()>.2
-                        ?0x9bdaf2
-                        :0x293c4b
-                })
-            );
-
-        strip.position.set(
-            0,
-            y,
-            9.12
-        );
-
-        g.add(strip);
-    }
-
-
-    const antenna =
-        new THREE.Mesh(
-            new THREE.CylinderGeometry(
-                .15,
-                .15,
-                18,
-                8
-            ),
-            new THREE.MeshBasicMaterial({
-                color:0xd9e3ed
-            })
-        );
-
-    antenna.position.y=74;
-
-    g.add(antenna);
-}
-
-
-/* =========================================================
-   PARK
-   ========================================================= */
-
-function createPark(g){
-
-    const grass =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                16,
-                .25,
-                14
-            ),
-            new THREE.MeshLambertMaterial({
-                color:0x4f9b58
-            })
-        );
-
-    grass.position.y=.15;
-
-    g.add(grass);
-
-
-    for(let i=0;i<7;i++){
-
-        const tree =
-            new THREE.Group();
-
-        const trunk =
-            new THREE.Mesh(
-                new THREE.CylinderGeometry(
-                    .35,
-                    .45,
-                    2.5,
-                    7
-                ),
-                new THREE.MeshLambertMaterial({
-                    color:0x795238
-                })
-            );
-
-        trunk.position.y=1.25;
-
-        tree.add(trunk);
-
-
-        const leaves =
-            new THREE.Mesh(
-                new THREE.SphereGeometry(
-                    2.1,
-                    8,
-                    6
-                ),
-                new THREE.MeshLambertMaterial({
-                    color:0x286e3a
-                })
-            );
-
-        leaves.position.y=3.5;
-
-        tree.add(leaves);
-
-        tree.position.set(
-            -6+Math.random()*12,
-            .2,
-            -5+Math.random()*10
-        );
-
-        g.add(tree);
-    }
-}
-
-
-/* =========================================================
-   STATION
-   ========================================================= */
-
-function createStation(g){
-
-    const body =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                18,
-                7,
-                14
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0xb9c0c7
-            })
-        );
-
-    body.position.y=3.5;
-
-    g.add(body);
-
-
-    const roof =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                20,
-                .7,
-                16
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x394452
-            })
-        );
-
-    roof.position.y=7.4;
-
-    g.add(roof);
-
-
-    const glass =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                15,
-                4,
-                .15
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x72c8df,
-                metalness:.2
-            })
-        );
-
-    glass.position.set(
-        0,
-        3.5,
-        7.1
-    );
-
-    g.add(glass);
-}
-
-
-/* =========================================================
-   WINDOWS / DOOR
-   ========================================================= */
-
-function addWindows(
-    g,
-    width,
-    height
-){
-
-    const mat =
-        new THREE.MeshStandardMaterial({
-            color:0x7ec9e2,
-            roughness:.15,
-            metalness:.1
-        });
-
-    for(
-        let x=-width;
-        x<=width;
-        x+=4
-    ){
-
-        const w =
-            new THREE.Mesh(
-                new THREE.BoxGeometry(
-                    1.8,
-                    1.8,
-                    .12
-                ),
-                mat
-            );
-
-        w.position.set(
-            x,
-            height,
-            4.55
-        );
-
-        g.add(w);
-    }
-}
-
-
-function addDoor(
-    g,
-    x,
-    y,
-    z
-){
-
-    const door =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                1.8,
-                2.8,
-                .15
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x493d38
-            })
-        );
-
-    door.position.set(
-        x,
-        y,
-        z
-    );
-
-    g.add(door);
-}
-
-
-/* =========================================================
-   LOAD BUILDINGS
-   ========================================================= */
-
-function createBuildingsFromSave(){
-
-    for(
-        const item of state.buildings
-    ){
+function createStartingCity(){
+
+    const start = [
+        ["house",-22,-22,0],
+        ["house",-10,-22,0],
+        ["house",22,-22,0],
+        ["shop",22,22,0],
+        ["park",-22,22,0]
+    ];
+
+    for(const item of start){
 
         createBuilding(
-            item.type,
-            item.x,
-            item.z,
-            item.rotation || 0
+            item[0],
+            item[1],
+            item[2],
+            item[3]
         );
     }
+
+    state.buildings=buildings.length;
+
+    recalculatePopulation();
 }
 
-
 /* =========================================================
-   TRAFFIC
+   CARS
    ========================================================= */
 
-function createTraffic(){
+function createCar(){
+
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(
+        new THREE.BoxGeometry(2.8,.8,1.5),
+        new THREE.MeshStandardMaterial({
+            color:
+                [0xe64b4b,0x4c8fe8,0xf0c34e,0xffffff]
+                [Math.floor(Math.random()*4)]
+        })
+    );
+
+    body.position.y=.7;
+    body.castShadow=true;
+
+    group.add(body);
+
+    const cabin = new THREE.Mesh(
+        new THREE.BoxGeometry(1.4,.65,1.25),
+        new THREE.MeshStandardMaterial({
+            color:0x25313b
+        })
+    );
+
+    cabin.position.set(.1,1.25,0);
+
+    group.add(cabin);
+
+    const car = {
+        mesh:group,
+        axis:Math.random()>.5?"x":"z",
+        dir:Math.random()>.5?1:-1,
+        speed:8+Math.random()*7,
+        offset:-140+Math.random()*280
+    };
+
+    scene.add(group);
+
+    cars.push(car);
+}
+
+function createCars(){
 
     for(let i=0;i<18;i++){
 
-        const car =
-            createTrafficCar();
+        createCar();
 
-        car.position.set(
-            Math.random()>.5
-            ? -200
-            : 200,
+        const c=cars[cars.length-1];
 
-            .6,
+        if(c.axis==="x"){
 
-            -200+
-            Math.random()*400
-        );
+            c.mesh.position.set(
+                c.offset,
+                0,
+                Math.random()>.5?3.0:-3.0
+            );
 
-        car.userData.speed =
-            7+
-            Math.random()*12;
-
-        car.userData.axis =
-            Math.random()>.5
-            ?"x"
-            :"z";
-
-        scene.add(car);
-
-        cars.push(car);
-    }
-}
-
-
-function createTrafficCar(){
-
-    const g =
-        new THREE.Group();
-
-    const body =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                2.3,
-                .8,
-                4.2
-            ),
-            new THREE.MeshStandardMaterial({
-                color:
-                    new THREE.Color(
-                        Math.random(),
-                        Math.random(),
-                        Math.random()
-                    )
-            })
-        );
-
-    body.position.y=.8;
-
-    g.add(body);
-
-
-    const roof =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                1.6,
-                .6,
-                1.9
-            ),
-            new THREE.MeshStandardMaterial({
-                color:0x242932
-            })
-        );
-
-    roof.position.y=1.35;
-
-    g.add(roof);
-
-    return g;
-}
-
-
-function updateTraffic(dt){
-
-    for(
-        const car of cars
-    ){
-
-        if(
-            car.userData.axis==="x"
-        ){
-
-            car.position.x +=
-                car.userData.speed*dt;
-
-            if(car.position.x>220)
-                car.position.x=-220;
+            c.mesh.rotation.y =
+                c.dir>0?0:Math.PI;
 
         }else{
 
-            car.position.z +=
-                car.userData.speed*dt;
+            c.mesh.position.set(
+                Math.random()>.5?3.0:-3.0,
+                0,
+                c.offset
+            );
 
-            if(car.position.z>220)
-                car.position.z=-220;
+            c.mesh.rotation.y =
+                c.dir>0?Math.PI/2:-Math.PI/2;
         }
     }
 }
 
+function updateCars(dt){
+
+    for(const c of cars){
+
+        if(c.axis==="x"){
+
+            c.mesh.position.x +=
+                c.dir*c.speed*dt;
+
+            if(c.mesh.position.x>210)
+                c.mesh.position.x=-210;
+
+            if(c.mesh.position.x<-210)
+                c.mesh.position.x=210;
+
+        }else{
+
+            c.mesh.position.z +=
+                c.dir*c.speed*dt;
+
+            if(c.mesh.position.z>210)
+                c.mesh.position.z=-210;
+
+            if(c.mesh.position.z<-210)
+                c.mesh.position.z=210;
+        }
+    }
+}
 
 /* =========================================================
-   BUILD PREVIEW
+   BUILD MENU
    ========================================================= */
+
+function setupBuildMenu(){
+
+    const container =
+        document.getElementById("buildItems");
+
+    container.innerHTML="";
+
+    for(const type in BUILDINGS){
+
+        const data=BUILDINGS[type];
+
+        const item=document.createElement("button");
+
+        item.className="buildItem";
+
+        item.innerHTML=`
+            <div class="buildIcon">${data.icon}</div>
+            <div class="buildName">${data.name}</div>
+            <div class="buildCost">€ ${data.cost.toLocaleString("de-DE")}</div>
+        `;
+
+        if(state.level < data.unlock){
+
+            item.classList.add("locked");
+
+            item.onclick=()=>{
+                notify(
+                    `🔒 Ab Level ${data.unlock} freigeschaltet`
+                );
+            };
+
+        }else{
+
+            item.onclick=()=>{
+                startBuilding(type);
+            };
+        }
+
+        container.appendChild(item);
+    }
+}
+
+/* =========================================================
+   BUILDING MODE
+   ========================================================= */
+
+function startBuilding(type){
+
+    if(state.level < BUILDINGS[type].unlock){
+
+        notify("🔒 Noch nicht freigeschaltet.");
+        return;
+    }
+
+    if(state.money < BUILDINGS[type].cost){
+
+        notify("💰 Nicht genug Geld.");
+        return;
+    }
+
+    cancelBuild();
+
+    buildMode=type;
+    buildRotation=0;
+
+    createPreview();
+
+    document.getElementById("buildHint").style.display="block";
+
+    notify(
+        `${BUILDINGS[type].icon} ${BUILDINGS[type].name} auswählen`
+    );
+}
 
 function createPreview(){
 
-    preview =
-        createBuilding(
-            "house",
-            0,
-            0
-        );
+    const data=BUILDINGS[buildMode];
 
-    if(preview){
+    previewObject =
+        createBuilding(buildMode,0,0,0);
 
-        scene.remove(preview);
+    previewObject.traverse(obj=>{
 
-        cityObjects.pop();
+        if(obj.isMesh){
 
-        preview.traverse(
-            object=>{
+            obj.material =
+                obj.material.clone();
 
-                if(object.material){
+            obj.material.transparent=true;
+            obj.material.opacity=.45;
+            obj.material.emissive=new THREE.Color(
+                0x123d2a
+            );
+            obj.material.emissiveIntensity=.3;
+        }
+    });
 
-                    object.material =
-                        object.material.clone();
+    previewObject.userData.preview=true;
 
-                    object.material.transparent=true;
-                    object.material.opacity=.45;
-                }
-            }
-        );
+    /* remove from official list */
 
-        scene.add(preview);
-    }
+    const index=buildings.indexOf(previewObject);
+
+    if(index>=0)
+        buildings.splice(index,1);
+
+    state.buildings=buildings.length;
 }
-
-
-/* =========================================================
-   BUILDING PLACEMENT
-   ========================================================= */
 
 function updatePreview(){
 
-    if(!preview)
-        return;
+    if(!previewObject) return;
 
-    const ray =
-        new THREE.Raycaster();
+    raycaster.setFromCamera(mouse,camera);
 
-    ray.setFromCamera(
-        mouse,
-        camera
+    const hit=raycaster.intersectObject(
+        ground
+    )[0];
+
+    if(!hit) return;
+
+    const p=hit.point;
+
+    const snap=2;
+
+    const x=Math.round(p.x/snap)*snap;
+    const z=Math.round(p.z/snap)*snap;
+
+    previewObject.position.x=x;
+    previewObject.position.z=z;
+
+    previewObject.rotation.y=buildRotation;
+
+    const valid=isPlacementValid(
+        previewObject.position.x,
+        previewObject.position.z,
+        buildMode
     );
 
-    const hits =
-        ray.intersectObject(
-            ground
-        );
+    previewObject.traverse(obj=>{
 
-    if(!hits.length)
-        return;
+        if(obj.isMesh){
 
-    const point =
-        hits[0].point;
+            obj.material.color.set(
+                valid?0x45ff9a:0xff4040
+            );
 
-    const grid=5;
-
-    const x=
-        Math.round(
-            point.x/grid
-        )*grid;
-
-    const z=
-        Math.round(
-            point.z/grid
-        )*grid;
-
-    preview.position.x=x;
-    preview.position.z=z;
-
-
-    const data =
-        buildings[
-            selectedType
-        ];
-
-    if(
-        data &&
-        state.money>=data.price
-    ){
-
-        preview.visible=true;
-
-    }else{
-
-        preview.visible=false;
-    }
+            obj.material.opacity=.42;
+        }
+    });
 }
 
+function isPlacementValid(x,z,type){
 
-function placeBuilding(){
-
-    const data =
-        buildings[
-            selectedType
-        ];
-
-    if(!data)
-        return;
+    const data=BUILDINGS[type];
 
     if(
-        state.level<
-        data.unlock
+        Math.abs(x)>270 ||
+        Math.abs(z)>270
     ){
+        return false;
+    }
 
-        notify(
-            "🔒 Level "+
-            data.unlock+
-            " benötigt"
-        );
+    /* don't build directly over major roads */
 
+    if(
+        Math.abs(z)<7 ||
+        Math.abs(x)<7 ||
+        Math.abs(z-70)<7 ||
+        Math.abs(z+70)<7 ||
+        Math.abs(x-70)<7 ||
+        Math.abs(x+70)<7
+    ){
+        return false;
+    }
+
+    const size =
+        Math.max(data.width,data.depth)/2;
+
+    for(const b of buildings){
+
+        const bd=BUILDINGS[b.userData.type];
+
+        const bx=b.position.x;
+        const bz=b.position.z;
+
+        const minDist =
+            size+
+            Math.max(bd.width,bd.depth)/2+
+            1.5;
+
+        if(
+            Math.abs(x-bx)<minDist &&
+            Math.abs(z-bz)<minDist
+        ){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function confirmBuild(){
+
+    if(!previewObject || !buildMode)
+        return;
+
+    const x=previewObject.position.x;
+    const z=previewObject.position.z;
+
+    if(!isPlacementValid(x,z,buildMode)){
+
+        notify("❌ Hier kann nicht gebaut werden.");
         return;
     }
 
-    if(
-        state.money<
-        data.price
-    ){
+    const data=BUILDINGS[buildMode];
 
-        notify(
-            "💸 Nicht genug Geld"
-        );
+    if(state.money<data.cost){
 
+        notify("💰 Nicht genug Geld.");
+        cancelBuild();
         return;
     }
 
-    if(!preview.visible)
-        return;
+    state.money-=data.cost;
 
+    scene.remove(previewObject);
 
-    const x=
-        Math.round(
-            preview.position.x/5
-        )*5;
+    const index=buildings.indexOf(previewObject);
 
-    const z=
-        Math.round(
-            preview.position.z/5
-        )*5;
+    if(index>=0)
+        buildings.splice(index,1);
 
+    previewObject=null;
 
-    /* avoid road center */
-
-    if(
-        Math.abs(x%40)<10 ||
-        Math.abs(z%40)<10
-    ){
-
-        notify(
-            "🚧 Hier ist eine Straße"
-        );
-
-        return;
-    }
-
-
-    state.money -=
-        data.price;
-
-    state.xp +=
-        data.xp;
-
-    state.population +=
-        data.population;
-
-
-    state.buildings.push({
-
-        type:selectedType,
-
-        x:x,
-
-        z:z,
-
-        rotation:0
-
-    });
-
-
-    createBuilding(
-        selectedType,
+    const b=createBuilding(
+        buildMode,
         x,
         z,
-        0
+        buildRotation
     );
 
+    b.userData.type=buildMode;
 
+    state.buildings=buildings.length;
+
+    state.xp+=data.xp;
+
+    recalculatePopulation();
     checkLevel();
 
-    checkMissions();
+    notify(
+        `${data.icon} ${data.name} gebaut! -€${data.cost.toLocaleString("de-DE")}`
+    );
 
     updateUI();
 
     saveGame();
+
+    cancelBuild();
 }
 
+function cancelBuild(){
+
+    if(previewObject){
+
+        scene.remove(previewObject);
+
+        const i=buildings.indexOf(previewObject);
+
+        if(i>=0)
+            buildings.splice(i,1);
+
+        previewObject=null;
+    }
+
+    buildMode=null;
+
+    document.getElementById("buildHint").style.display="none";
+}
 
 /* =========================================================
-   LEVEL SYSTEM
+   POPULATION / ECONOMY
+   ========================================================= */
+
+function recalculatePopulation(){
+
+    let pop=0;
+
+    for(const b of buildings){
+
+        const data=BUILDINGS[b.userData.type];
+
+        if(data)
+            pop+=data.population;
+    }
+
+    state.population=pop;
+
+    calculateHappiness();
+}
+
+function calculateHappiness(){
+
+    let happiness=65;
+
+    for(const b of buildings){
+
+        const type=b.userData.type;
+
+        if(type==="park")
+            happiness+=3;
+
+        if(type==="school")
+            happiness+=4;
+
+        if(type==="hospital")
+            happiness+=5;
+    }
+
+    if(state.population>100)
+        happiness-=4;
+
+    if(state.population>300)
+        happiness-=5;
+
+    state.happiness=
+        Math.max(0,Math.min(100,happiness));
+}
+
+function collectIncome(){
+
+    let income=0;
+
+    for(const b of buildings){
+
+        const data=BUILDINGS[b.userData.type];
+
+        if(data)
+            income+=data.income;
+    }
+
+    income*=state.happiness/100;
+
+    state.money+=Math.round(income);
+
+    if(income>0)
+        notify(
+            `💰 Stadt-Einnahmen +€${Math.round(income)}`
+        );
+
+    updateUI();
+    saveGame();
+}
+
+/* =========================================================
+   LEVEL
    ========================================================= */
 
 function xpNeeded(){
 
-    return (
-        100+
-        (state.level-1)*100
-    );
+    return state.level*300;
 }
-
 
 function checkLevel(){
 
-    let changed=false;
+    while(state.xp>=xpNeeded()){
 
-    while(
-        state.xp>=xpNeeded()
-    ){
-
-        state.xp -=
-            xpNeeded();
+        state.xp-=xpNeeded();
 
         state.level++;
 
-        state.money +=
-            state.level*750;
-
-        changed=true;
-    }
-
-    if(changed){
-
         notify(
-            "🎉 LEVEL "+
-            state.level+
-            " erreicht!"
+            `🎉 LEVEL ${state.level}! Neue Gebäude freigeschaltet.`
         );
 
-        updateBuildingLocks();
+        setupBuildMenu();
     }
 }
-
-
-function updateBuildingLocks(){
-
-    document
-        .querySelectorAll(
-            ".buildBtn"
-        )
-        .forEach(btn=>{
-
-            const type =
-                btn.dataset.type;
-
-            const data =
-                buildings[type];
-
-            if(
-                state.level>=
-                data.unlock
-            ){
-
-                btn.classList.remove(
-                    "locked"
-                );
-
-                const price =
-                    btn.querySelector(
-                        ".buildPrice"
-                    );
-
-                if(price)
-                    price.textContent=
-                        "€ "+
-                        data.price.toLocaleString(
-                            "de-DE"
-                        );
-            }
-        });
-}
-
 
 /* =========================================================
    MISSIONS
    ========================================================= */
 
-function checkMissions(){
+function setupMissions(){
 
-    const houses =
-        state.buildings.filter(
-            b=>b.type==="house"
-        ).length;
+    const container=
+        document.getElementById("missions");
 
-    const shops =
-        state.buildings.filter(
-            b=>b.type==="shop"
-        ).length;
+    container.innerHTML="";
 
+    for(const m of MISSION_DATA){
 
-    if(
-        houses>=5 &&
-        !state.completed.includes(
-            "houses"
-        )
-    ){
+        const div=document.createElement("div");
 
-        state.completed.push(
-            "houses"
-        );
+        div.className="mission";
+        div.id="mission_"+m.id;
 
-        state.money+=2000;
-        state.xp+=100;
+        div.innerHTML=`
+            <b>${m.title}</b>
+            <p>${m.text}</p>
+            <div class="progress">
+                <i></i>
+            </div>
+            <p class="missionProgress">0 / ${m.goal}</p>
+        `;
 
-        notify(
-            "🏘️ Mission abgeschlossen!"
-        );
+        container.appendChild(div);
     }
 
-
-    if(
-        shops>=2 &&
-        !state.completed.includes(
-            "shops"
-        )
-    ){
-
-        state.completed.push(
-            "shops"
-        );
-
-        state.money+=3500;
-        state.xp+=150;
-
-        notify(
-            "🏪 Innenstadt-Mission!"
-        );
-    }
-
-
-    if(
-        state.level>=5 &&
-        !state.completed.includes(
-            "level5"
-        )
-    ){
-
-        state.completed.push(
-            "level5"
-        );
-
-        state.money+=10000;
-        state.xp+=500;
-
-        notify(
-            "🌆 Großstadt erreicht!"
-        );
-    }
-
-    checkLevel();
+    updateMissions();
 }
 
+function missionValue(m){
+
+    if(m.type==="population")
+        return state.population;
+
+    if(m.type==="level")
+        return state.level;
+
+    let count=0;
+
+    for(const b of buildings){
+
+        if(b.userData.type===m.type)
+            count++;
+    }
+
+    return count;
+}
+
+function updateMissions(){
+
+    for(const m of MISSION_DATA){
+
+        const el=document.getElementById(
+            "mission_"+m.id
+        );
+
+        if(!el) continue;
+
+        if(completedMissions.includes(m.id)){
+
+            el.style.opacity=".5";
+
+            el.querySelector(
+                ".missionProgress"
+            ).textContent="✓ Abgeschlossen";
+
+            el.querySelector("i").style.width="100%";
+
+            continue;
+        }
+
+        const value=Math.min(
+            missionValue(m),
+            m.goal
+        );
+
+        el.querySelector("i").style.width=
+            (value/m.goal*100)+"%";
+
+        el.querySelector(
+            ".missionProgress"
+        ).textContent=
+            `${value} / ${m.goal}`;
+
+        if(value>=m.goal){
+
+            completeMission(m);
+        }
+    }
+}
+
+function completeMission(m){
+
+    if(completedMissions.includes(m.id))
+        return;
+
+    completedMissions.push(m.id);
+
+    state.money+=m.reward;
+    state.xp+=m.xp;
+
+    checkLevel();
+
+    notify(
+        `🎯 Mission geschafft! +€${m.reward.toLocaleString("de-DE")}`
+    );
+
+    updateUI();
+}
+
+/* =========================================================
+   SELECTION
+   ========================================================= */
+
+function selectBuilding(obj){
+
+    selectedObject=obj;
+
+    document.getElementById("infoPanel")
+        .classList.add("open");
+
+    const type=obj.userData.type;
+    const data=BUILDINGS[type];
+
+    document.getElementById("infoName")
+        .textContent=data.name;
+
+    document.getElementById("infoType")
+        .textContent=
+        `${data.icon} Gebäude`;
+
+    document.getElementById("infoContent")
+        .innerHTML=`
+            <div class="infoRow">
+                <span>Einwohner</span>
+                <b>+${data.population}</b>
+            </div>
+            <div class="infoRow">
+                <span>Einnahmen</span>
+                <b>${data.income>=0?"+":""}€${data.income}/Tick</b>
+            </div>
+            <div class="infoRow">
+                <span>Baukosten</span>
+                <b>€${data.cost.toLocaleString("de-DE")}</b>
+            </div>
+            <div class="infoRow">
+                <span>Position</span>
+                <b>${Math.round(obj.position.x)}, ${Math.round(obj.position.z)}</b>
+            </div>
+        `;
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+
+function setupEvents(){
+
+    window.addEventListener("resize",onResize);
+
+    renderer.domElement.addEventListener(
+        "pointermove",
+        onPointerMove
+    );
+
+    renderer.domElement.addEventListener(
+        "pointerdown",
+        onPointerDown
+    );
+
+    renderer.domElement.addEventListener(
+        "wheel",
+        onWheel,
+        {passive:false}
+    );
+
+    document.addEventListener(
+        "keydown",
+        onKeyDown
+    );
+
+    document.getElementById("missionBtn")
+        .onclick=()=>{
+            const p=document.getElementById("missionPanel");
+            p.style.display=
+                p.style.display==="block"
+                ?"none"
+                :"block";
+        };
+
+    document.getElementById("infoBtn")
+        .onclick=()=>{
+            document.getElementById("infoPanel")
+                .classList.toggle("open");
+        };
+
+    document.getElementById("rotateBtn")
+        .onclick=()=>{
+            if(buildMode){
+                buildRotation+=Math.PI/2;
+            }else{
+                notify("↻ Wähle zuerst ein Gebäude zum Bauen.");
+            }
+        };
+
+    document.getElementById("demolishBtn")
+        .onclick=()=>{
+            if(selectedObject){
+                demolishSelected();
+            }else{
+                notify("🗑️ Wähle zuerst ein Gebäude.");
+            }
+        };
+
+    document.getElementById("closeInfo")
+        .onclick=()=>{
+            document.getElementById("infoPanel")
+                .classList.remove("open");
+        };
+
+    document.getElementById("deleteSelected")
+        .onclick=demolishSelected;
+
+    document.getElementById("menuBtn")
+        .onclick=openMenu;
+
+    document.getElementById("closeMenu")
+        .onclick=closeMenu;
+
+    document.getElementById("resumeBtn")
+        .onclick=closeMenu;
+
+    document.getElementById("saveBtn")
+        .onclick=()=>{
+            saveGame();
+            notify("💾 Stadt gespeichert.");
+            closeMenu();
+        };
+
+    document.getElementById("newBtn")
+        .onclick=newGame;
+}
+
+function onPointerMove(e){
+
+    const rect=renderer.domElement.getBoundingClientRect();
+
+    mouse.x =
+        ((e.clientX-rect.left)/rect.width)*2-1;
+
+    mouse.y =
+        -((e.clientY-rect.top)/rect.height)*2+1;
+
+    updatePreview();
+}
+
+function onPointerDown(e){
+
+    if(e.button!==0)
+        return;
+
+    if(buildMode){
+
+        confirmBuild();
+        return;
+    }
+
+    raycaster.setFromCamera(mouse,camera);
+
+    const hits=raycaster.intersectObjects(
+        buildings,
+        true
+    );
+
+    if(hits.length){
+
+        let obj=hits[0].object;
+
+        while(
+            obj.parent &&
+            !obj.userData.building
+        ){
+            obj=obj.parent;
+        }
+
+        if(obj.userData.building){
+
+            selectBuilding(obj);
+            return;
+        }
+    }
+
+    selectedObject=null;
+}
+
+function onWheel(e){
+
+    e.preventDefault();
+
+    camera.position.multiplyScalar(
+        e.deltaY>0?1.08:.92
+    );
+
+    const len=camera.position.length();
+
+    if(len<25)
+        camera.position.setLength(25);
+
+    if(len>500)
+        camera.position.setLength(500);
+
+    camera.lookAt(cameraTarget);
+}
+
+function onKeyDown(e){
+
+    if(e.key==="Escape"){
+
+        cancelBuild();
+
+        document.getElementById("menu")
+            .style.display="none";
+    }
+
+    if(e.key==="r" || e.key==="R"){
+
+        if(buildMode)
+            buildRotation+=Math.PI/2;
+    }
+
+    if(e.key==="Delete"){
+
+        if(selectedObject)
+            demolishSelected();
+    }
+
+    const speed=4;
+
+    if(e.key==="w" || e.key==="W")
+        camera.position.z-=speed;
+
+    if(e.key==="s" || e.key==="S")
+        camera.position.z+=speed;
+
+    if(e.key==="a" || e.key==="A")
+        camera.position.x-=speed;
+
+    if(e.key==="d" || e.key==="D")
+        camera.position.x+=speed;
+
+    camera.lookAt(cameraTarget);
+}
+
+/* =========================================================
+   DEMOLISH
+   ========================================================= */
+
+function demolishSelected(){
+
+    if(!selectedObject)
+        return;
+
+    const type=selectedObject.userData.type;
+
+    const data=BUILDINGS[type];
+
+    const refund=Math.floor(data.cost*.35);
+
+    state.money+=refund;
+
+    scene.remove(selectedObject);
+
+    const index=buildings.indexOf(selectedObject);
+
+    if(index>=0)
+        buildings.splice(index,1);
+
+    selectedObject=null;
+
+    state.buildings=buildings.length;
+
+    recalculatePopulation();
+
+    notify(
+        `🗑️ ${data.name} abgerissen. +€${refund}`
+    );
+
+    document.getElementById("infoPanel")
+        .classList.remove("open");
+
+    updateUI();
+    saveGame();
+}
+
+/* =========================================================
+   MENU
+   ========================================================= */
+
+function openMenu(){
+
+    paused=true;
+
+    document.getElementById("menu")
+        .style.display="flex";
+}
+
+function closeMenu(){
+
+    paused=false;
+
+    document.getElementById("menu")
+        .style.display="none";
+}
+
+/* =========================================================
+   SAVE
+   ========================================================= */
+
+function saveGame(){
+
+    const save={
+        state,
+        completedMissions,
+        buildings:buildings.map(b=>({
+            type:b.userData.type,
+            x:b.position.x,
+            z:b.position.z,
+            rotation:b.rotation.y
+        }))
+    };
+
+    localStorage.setItem(
+        SAVE_KEY,
+        JSON.stringify(save)
+    );
+}
+
+function loadGame(){
+
+    const raw=localStorage.getItem(SAVE_KEY);
+
+    if(!raw)
+        return;
+
+    try{
+
+        const save=JSON.parse(raw);
+
+        if(save.state)
+            state=Object.assign(state,save.state);
+
+        if(Array.isArray(save.completedMissions))
+            completedMissions=
+                save.completedMissions;
+
+        if(Array.isArray(save.buildings)){
+
+            for(const b of buildings)
+                scene.remove(b);
+
+            buildings=[];
+
+            for(const b of save.buildings){
+
+                if(BUILDINGS[b.type]){
+
+                    createBuilding(
+                        b.type,
+                        b.x,
+                        b.z,
+                        b.rotation||0
+                    );
+                }
+            }
+        }
+
+        state.buildings=buildings.length;
+
+        recalculatePopulation();
+
+    }catch(e){
+
+        console.warn("Save konnte nicht geladen werden.",e);
+    }
+
+    setupBuildMenu();
+    updateMissions();
+}
+
+function newGame(){
+
+    if(!confirm(
+        "Wirklich eine neue Stadt starten?"
+    ))
+        return;
+
+    localStorage.removeItem(SAVE_KEY);
+
+    location.reload();
+}
 
 /* =========================================================
    UI
@@ -2188,449 +2347,46 @@ function checkMissions(){
 
 function updateUI(){
 
-    document.getElementById(
-        "money"
-    ).textContent=
-        "€ "+
-        Math.floor(
-            state.money
-        ).toLocaleString(
-            "de-DE"
-        );
+    document.getElementById("money")
+        .textContent=
+        "€ "+Math.floor(state.money)
+            .toLocaleString("de-DE");
 
-    document.getElementById(
-        "level"
-    ).textContent=
+    document.getElementById("population")
+        .textContent=
+        state.population.toLocaleString("de-DE");
+
+    document.getElementById("level")
+        .textContent=
         state.level;
 
-    document.getElementById(
-        "population"
-    ).textContent=
-        state.population.toLocaleString(
-            "de-DE"
-        );
+    document.getElementById("happiness")
+        .textContent=
+        Math.round(state.happiness)+"%";
 
-    document.getElementById(
-        "buildings"
-    ).textContent=
-        state.buildings.length;
-
-    const percent =
-        Math.min(
-            100,
-            state.xp/xpNeeded()*100
-        );
-
-    document.getElementById(
-        "xpFill"
-    ).style.width=
-        percent+"%";
-
-    updateBuildingLocks();
+    updateMissions();
 }
-
-
-/* =========================================================
-   MONEY INCOME
-   ========================================================= */
-
-let incomeTimer=0;
-
-function cityIncome(dt){
-
-    incomeTimer+=dt;
-
-    if(
-        incomeTimer>=10
-    ){
-
-        incomeTimer=0;
-
-        const income =
-            Math.floor(
-                state.population*.8
-            );
-
-        if(income>0){
-
-            state.money+=income;
-
-            updateUI();
-        }
-    }
-}
-
-
-/* =========================================================
-   CAMERA
-   ========================================================= */
-
-function updateCamera(dt){
-
-    const speed=35;
-
-    let forward=0;
-    let side=0;
-
-    if(keys.w) forward+=1;
-    if(keys.s) forward-=1;
-    if(keys.a) side-=1;
-    if(keys.d) side+=1;
-
-
-    const direction =
-        new THREE.Vector3(
-            Math.sin(player.rot),
-            0,
-            Math.cos(player.rot)
-        );
-
-    const right =
-        new THREE.Vector3(
-            Math.cos(player.rot),
-            0,
-            -Math.sin(player.rot)
-        );
-
-
-    player.x +=
-        (
-            direction.x*forward+
-            right.x*side
-        )*
-        speed*dt;
-
-    player.z +=
-        (
-            direction.z*forward+
-            right.z*side
-        )*
-        speed*dt;
-
-
-    const target =
-        new THREE.Vector3(
-            player.x,
-            player.y,
-            player.z
-        );
-
-
-    camera.position.lerp(
-        target,
-        Math.min(
-            1,
-            dt*4
-        )
-    );
-
-
-    camera.lookAt(
-        player.x,
-        0,
-        player.z
-    );
-}
-
-
-/* =========================================================
-   MOUSE
-   ========================================================= */
-
-rendererMouseEvents();
-
-
-function rendererMouseEvents(){
-
-    renderer.domElement.addEventListener(
-        "mousemove",
-        e=>{
-
-            mouse.x=
-                e.clientX/
-                innerWidth*
-                2-1;
-
-            mouse.y=
-                -(e.clientY/
-                innerHeight)*
-                2+1;
-
-            updatePreview();
-        }
-    );
-
-
-    renderer.domElement.addEventListener(
-        "click",
-        e=>{
-
-            if(!started)
-                return;
-
-            placeBuilding();
-        }
-    );
-
-
-    renderer.domElement.addEventListener(
-        "contextmenu",
-        e=>{
-            e.preventDefault();
-
-            if(preview){
-
-                preview.visible=false;
-            }
-        }
-    );
-}
-
-
-/* =========================================================
-   BUILD BUTTONS
-   ========================================================= */
-
-document
-    .querySelectorAll(
-        ".buildBtn"
-    )
-    .forEach(btn=>{
-
-        btn.addEventListener(
-            "click",
-            ()=>{
-
-                const type =
-                    btn.dataset.type;
-
-                if(
-                    state.level<
-                    buildings[type].unlock
-                ){
-
-                    notify(
-                        "🔒 Noch gesperrt"
-                    );
-
-                    return;
-                }
-
-                selectedType=type;
-
-                document
-                    .querySelectorAll(
-                        ".buildBtn"
-                    )
-                    .forEach(
-                        b=>b.classList.remove(
-                            "active"
-                        )
-                    );
-
-                btn.classList.add(
-                    "active"
-                );
-
-
-                rebuildPreview();
-            }
-        );
-    });
-
-
-function rebuildPreview(){
-
-    if(preview){
-
-        scene.remove(preview);
-
-        const index =
-            cityObjects.indexOf(
-                preview
-            );
-
-        if(index>=0)
-            cityObjects.splice(
-                index,
-                1
-            );
-    }
-
-
-    preview =
-        createBuilding(
-            selectedType,
-            0,
-            0
-        );
-
-    scene.remove(preview);
-
-    const index =
-        cityObjects.indexOf(
-            preview
-        );
-
-    if(index>=0)
-        cityObjects.splice(
-            index,
-            1
-        );
-
-
-    preview.traverse(
-        object=>{
-
-            if(object.material){
-
-                object.material =
-                    object.material.clone();
-
-                object.material.transparent=true;
-                object.material.opacity=.45;
-            }
-        }
-    );
-
-    scene.add(preview);
-}
-
-
-/* =========================================================
-   KEYBOARD
-   ========================================================= */
-
-window.addEventListener(
-    "keydown",
-    e=>{
-
-        if(e.key.toLowerCase()==="w")
-            keys.w=true;
-
-        if(e.key.toLowerCase()==="a")
-            keys.a=true;
-
-        if(e.key.toLowerCase()==="s")
-            keys.s=true;
-
-        if(e.key.toLowerCase()==="d")
-            keys.d=true;
-
-        if(e.key==="Escape"){
-
-            if(preview)
-                preview.visible=false;
-        }
-    }
-);
-
-
-window.addEventListener(
-    "keyup",
-    e=>{
-
-        if(e.key.toLowerCase()==="w")
-            keys.w=false;
-
-        if(e.key.toLowerCase()==="a")
-            keys.a=false;
-
-        if(e.key.toLowerCase()==="s")
-            keys.s=false;
-
-        if(e.key.toLowerCase()==="d")
-            keys.d=false;
-    }
-);
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-function mobileButton(
-    id,
-    key
-){
-
-    const el=
-        document.getElementById(id);
-
-    el.addEventListener(
-        "touchstart",
-        e=>{
-            e.preventDefault();
-            keys[key]=true;
-        },
-        {passive:false}
-    );
-
-    el.addEventListener(
-        "touchend",
-        e=>{
-            e.preventDefault();
-            keys[key]=false;
-        },
-        {passive:false}
-    );
-}
-
-mobileButton(
-    "mForward",
-    "w"
-);
-
-mobileButton(
-    "mBack",
-    "s"
-);
-
-mobileButton(
-    "mLeft",
-    "a"
-);
-
-mobileButton(
-    "mRight",
-    "d"
-);
-
-
-/* =========================================================
-   NOTIFICATION
-   ========================================================= */
-
-let notificationTimer;
 
 function notify(text){
 
-    const el =
-        document.getElementById(
-            "notification"
-        );
+    const n=document.createElement("div");
 
-    el.textContent=text;
+    n.className="notice";
+    n.textContent=text;
 
-    el.classList.add(
-        "show"
-    );
+    document.getElementById("notifications")
+        .appendChild(n);
 
-    clearTimeout(
-        notificationTimer
-    );
+    setTimeout(()=>{
+        n.style.opacity="0";
+        n.style.transform="translateY(-10px)";
 
-    notificationTimer=
-        setTimeout(
-            ()=>{
-                el.classList.remove(
-                    "show"
-                );
-            },
-            1800
-        );
+        setTimeout(()=>{
+            n.remove();
+        },250);
+
+    },2500);
 }
-
 
 /* =========================================================
    DAY / NIGHT
@@ -2638,163 +2394,175 @@ function notify(text){
 
 function updateDayNight(dt){
 
-    state.time +=
-        dt*.35;
+    state.hour+=dt*.35;
 
-    if(
-        state.time>=24
-    )
-        state.time=0;
+    if(state.hour>=24){
 
+        state.hour-=24;
+        state.day++;
 
-    const hour=
-        state.time;
+        collectIncome();
+    }
 
+    const t=state.hour/24;
 
-    let daylight=
+    const angle=t*Math.PI*2;
+
+    sun.position.set(
+        Math.cos(angle)*180,
+        Math.sin(angle)*180+30,
+        80
+    );
+
+    const daylight=
         Math.max(
-            0,
-            Math.sin(
-                (hour-6)/
-                12*
-                Math.PI
-            )
+            .08,
+            Math.sin(angle)*.5+.5
         );
 
+    sun.intensity=
+        .25+
+        daylight*1.9;
 
-    const sky =
+    ambient.intensity=
+        .45+
+        daylight*.9;
+
+    const sky=
         new THREE.Color();
 
     sky.setHSL(
-        .58,
-        .45,
-        .55*daylight+
-        .06
+        .56,
+        .35,
+        .22+daylight*.34
     );
 
-    scene.background=
-        sky;
+    scene.background=sky;
 
-    scene.fog.color=
-        sky;
-}
+    /* windows become brighter */
 
+    for(const b of buildings){
 
-/* =========================================================
-   SAVE PERIODICALLY
-   ========================================================= */
+        b.traverse(obj=>{
 
-let saveTimer=0;
+            if(
+                obj.isMesh &&
+                obj.material &&
+                obj.material.emissive
+            ){
 
-function automaticSave(dt){
-
-    saveTimer+=dt;
-
-    if(
-        saveTimer>=20
-    ){
-
-        saveTimer=0;
-
-        localStorage.setItem(
-            saveKey,
-            JSON.stringify(state)
-        );
+                obj.material.emissiveIntensity=
+                    daylight<.35?.8:.2;
+            }
+        });
     }
 }
 
-
 /* =========================================================
-   START
+   CAMERA TOUCH / DRAG
    ========================================================= */
 
-document
-    .getElementById(
-        "startBtn"
-    )
-    .addEventListener(
-        "click",
-        ()=>{
+let dragging=false;
+let lastX=0;
+let lastY=0;
 
-            started=true;
+rendererSafeTouch();
 
-            document
-                .getElementById(
-                    "startScreen"
-                )
-                .style.display="none";
+function rendererSafeTouch(){
 
-            notify(
-                "Willkommen in deiner Stadt!"
-            );
+    document.addEventListener(
+        "pointerdown",
+        e=>{
+            if(
+                e.target===renderer?.domElement
+            ){
+                dragging=true;
+                lastX=e.clientX;
+                lastY=e.clientY;
+            }
         }
     );
 
+    document.addEventListener(
+        "pointerup",
+        ()=>{
+            dragging=false;
+        }
+    );
+
+    document.addEventListener(
+        "pointermove",
+        e=>{
+
+            if(!dragging || buildMode)
+                return;
+
+            if(
+                e.target!==renderer?.domElement
+            )
+                return;
+
+            const dx=e.clientX-lastX;
+            const dy=e.clientY-lastY;
+
+            lastX=e.clientX;
+            lastY=e.clientY;
+
+            camera.position.x-=dx*.12;
+            camera.position.z-=dy*.12;
+
+            camera.lookAt(cameraTarget);
+        }
+    );
+}
 
 /* =========================================================
    RESIZE
    ========================================================= */
 
-window.addEventListener(
-    "resize",
-    ()=>{
+function onResize(){
 
-        camera.aspect=
-            innerWidth/
-            innerHeight;
+    camera.aspect=
+        innerWidth/innerHeight;
 
-        camera.updateProjectionMatrix();
+    camera.updateProjectionMatrix();
 
-        renderer.setSize(
-            innerWidth,
-            innerHeight
-        );
-    }
-);
-
+    renderer.setSize(
+        innerWidth,
+        innerHeight
+    );
+}
 
 /* =========================================================
-   GAME LOOP
+   ANIMATION
    ========================================================= */
-
-let last=
-    performance.now();
-
 
 function animate(){
 
-    requestAnimationFrame(
-        animate
+    requestAnimationFrame(animate);
+
+    const dt=Math.min(
+        clock.getDelta(),
+        .05
     );
 
+    if(!paused){
 
-    const now=
-        performance.now();
-
-    const dt=
-        Math.min(
-            .05,
-            (now-last)/1000
-        );
-
-    last=now;
-
-
-    if(started){
-
-        updateCamera(dt);
-
-        updateTraffic(dt);
-
-        cityIncome(dt);
-
+        updateCars(dt);
         updateDayNight(dt);
 
-        automaticSave(dt);
+        /* subtle building animation */
 
-        updatePreview();
+        for(const b of buildings){
+
+            if(
+                b.userData.type==="park"
+            ){
+                b.rotation.y +=
+                    Math.sin(performance.now()*.0002)*.00001;
+            }
+        }
     }
-
 
     renderer.render(
         scene,
@@ -2802,9 +2570,19 @@ function animate(){
     );
 }
 
+/* =========================================================
+   AUTOSAVE
+   ========================================================= */
+
+setInterval(()=>{
+
+    if(!paused)
+        saveGame();
+
+},15000);
 
 /* =========================================================
-   START ENGINE
+   START
    ========================================================= */
 
 init();
