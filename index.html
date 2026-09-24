@@ -1,0 +1,2815 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<title>MY CITY — 3D City Simulator</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    user-select:none;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Inter,Arial,sans-serif;
+    background:#10141c;
+}
+
+#game{
+    position:fixed;
+    inset:0;
+}
+
+canvas{
+    display:block;
+}
+
+#ui{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    color:white;
+}
+
+.topbar{
+    position:absolute;
+    top:18px;
+    left:18px;
+    right:18px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.brand{
+    padding:12px 17px;
+    border-radius:15px;
+    background:rgba(15,20,29,.78);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(15px);
+    font-weight:1000;
+    font-size:20px;
+    letter-spacing:-1px;
+}
+
+.stats{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.stat{
+    min-width:105px;
+    padding:9px 13px;
+    border-radius:13px;
+    background:rgba(15,20,29,.72);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(15px);
+}
+
+.stat small{
+    display:block;
+    color:#8d98a9;
+    font-size:9px;
+    letter-spacing:1.5px;
+}
+
+.stat strong{
+    font-size:17px;
+}
+
+#money{
+    color:#70e49a;
+}
+
+#level{
+    color:#7db8ff;
+}
+
+#xpBar{
+    position:absolute;
+    top:82px;
+    left:18px;
+    width:220px;
+    height:6px;
+    background:rgba(0,0,0,.35);
+    border-radius:10px;
+    overflow:hidden;
+}
+
+#xpFill{
+    width:0%;
+    height:100%;
+    background:#5fa8ff;
+    transition:.3s;
+}
+
+#buildPanel{
+    position:absolute;
+    left:18px;
+    bottom:18px;
+    width:290px;
+    pointer-events:auto;
+}
+
+.panel{
+    background:rgba(15,20,29,.84);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(18px);
+    border-radius:18px;
+    padding:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+}
+
+.panelTitle{
+    font-size:11px;
+    color:#8d98a9;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    margin-bottom:10px;
+}
+
+.buildGrid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:7px;
+}
+
+.buildBtn{
+    min-height:70px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    background:#202735;
+    color:white;
+    cursor:pointer;
+    transition:.15s;
+}
+
+.buildBtn:hover{
+    background:#293346;
+    transform:translateY(-2px);
+}
+
+.buildBtn.active{
+    border-color:#69a9ff;
+    background:#263d5e;
+}
+
+.buildIcon{
+    font-size:22px;
+}
+
+.buildName{
+    font-size:10px;
+    margin-top:5px;
+}
+
+.buildPrice{
+    color:#72df9b;
+    font-size:9px;
+    margin-top:2px;
+}
+
+.locked{
+    opacity:.35;
+    cursor:not-allowed;
+}
+
+#rightPanel{
+    position:absolute;
+    top:110px;
+    right:18px;
+    width:270px;
+    pointer-events:auto;
+}
+
+.mission{
+    padding:11px;
+    margin-top:7px;
+    border-radius:11px;
+    background:rgba(255,255,255,.045);
+}
+
+.missionTitle{
+    font-size:12px;
+    font-weight:800;
+}
+
+.missionDesc{
+    color:#8d98a9;
+    font-size:10px;
+    margin-top:3px;
+}
+
+.missionReward{
+    color:#72df9b;
+    font-size:10px;
+    margin-top:6px;
+}
+
+#hint{
+    position:absolute;
+    left:50%;
+    bottom:25px;
+    transform:translateX(-50%);
+    background:rgba(10,13,18,.75);
+    padding:9px 15px;
+    border-radius:12px;
+    color:#b9c2cf;
+    font-size:11px;
+    backdrop-filter:blur(10px);
+}
+
+#notification{
+    position:absolute;
+    left:50%;
+    top:120px;
+    transform:translateX(-50%) translateY(-15px);
+    opacity:0;
+    background:rgba(16,22,31,.92);
+    border:1px solid rgba(255,255,255,.12);
+    padding:13px 20px;
+    border-radius:14px;
+    font-weight:800;
+    transition:.25s;
+}
+
+#notification.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+}
+
+#startScreen{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+        radial-gradient(circle at 50% 35%,#284a70 0%,#10141c 48%,#080a0e 100%);
+    color:white;
+}
+
+.startBox{
+    width:min(620px,90vw);
+    text-align:center;
+}
+
+.logo{
+    font-size:clamp(60px,11vw,110px);
+    font-weight:1000;
+    letter-spacing:-7px;
+    line-height:.8;
+}
+
+.logo span{
+    color:#62a9ff;
+}
+
+.startSub{
+    margin-top:20px;
+    color:#8f9bad;
+    letter-spacing:4px;
+    font-size:11px;
+}
+
+.startBtn{
+    margin-top:42px;
+    padding:17px 55px;
+    border:0;
+    border-radius:14px;
+    background:#fff;
+    color:#111722;
+    font-size:16px;
+    font-weight:1000;
+    cursor:pointer;
+}
+
+.startBtn:hover{
+    transform:translateY(-2px);
+}
+
+.controls{
+    margin-top:25px;
+    color:#687487;
+    font-size:11px;
+    line-height:1.8;
+}
+
+#mobileControls{
+    display:none;
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
+
+.mobileBtn{
+    position:absolute;
+    width:65px;
+    height:65px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,.15);
+    background:rgba(10,15,23,.55);
+    color:white;
+    font-size:24px;
+    pointer-events:auto;
+}
+
+#mLeft{
+    bottom:25px;
+    left:20px;
+}
+
+#mRight{
+    bottom:25px;
+    left:95px;
+}
+
+#mForward{
+    bottom:100px;
+    right:95px;
+}
+
+#mBack{
+    bottom:25px;
+    right:20px;
+}
+
+@media(max-width:850px){
+
+    .stats .stat:nth-child(3){
+        display:none;
+    }
+
+    #buildPanel{
+        width:250px;
+    }
+
+    #rightPanel{
+        width:220px;
+    }
+
+    #mobileControls{
+        display:block;
+    }
+
+    #hint{
+        display:none;
+    }
+}
+
+@media(max-width:600px){
+
+    .brand{
+        font-size:15px;
+    }
+
+    .stat{
+        min-width:75px;
+        padding:7px 9px;
+    }
+
+    .stat strong{
+        font-size:13px;
+    }
+
+    #rightPanel{
+        top:90px;
+        right:10px;
+        width:180px;
+        transform:scale(.9);
+        transform-origin:top right;
+    }
+
+    #buildPanel{
+        left:10px;
+        bottom:10px;
+        width:230px;
+        transform:scale(.85);
+        transform-origin:bottom left;
+    }
+
+    #xpBar{
+        top:67px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="ui">
+
+    <div class="topbar">
+
+        <div class="brand">
+            MY<span style="color:#65aaff">CITY</span>
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+                <small>MONEY</small>
+                <strong id="money">€ 10,000</strong>
+            </div>
+
+            <div class="stat">
+                <small>LEVEL</small>
+                <strong id="level">1</strong>
+            </div>
+
+            <div class="stat">
+                <small>POPULATION</small>
+                <strong id="population">0</strong>
+            </div>
+
+            <div class="stat">
+                <small>BUILDINGS</small>
+                <strong id="buildings">0</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="xpBar">
+        <div id="xpFill"></div>
+    </div>
+
+    <div id="buildPanel">
+
+        <div class="panel">
+
+            <div class="panelTitle">
+                Build
+            </div>
+
+            <div class="buildGrid">
+
+                <button class="buildBtn active" data-type="house">
+                    <div class="buildIcon">🏠</div>
+                    <div class="buildName">Haus</div>
+                    <div class="buildPrice">€ 500</div>
+                </button>
+
+                <button class="buildBtn" data-type="shop">
+                    <div class="buildIcon">🏪</div>
+                    <div class="buildName">Shop</div>
+                    <div class="buildPrice">€ 1,200</div>
+                </button>
+
+                <button class="buildBtn locked" data-type="office">
+                    <div class="buildIcon">🏢</div>
+                    <div class="buildName">Büro</div>
+                    <div class="buildPrice">Lvl 3</div>
+                </button>
+
+                <button class="buildBtn locked" data-type="tower">
+                    <div class="buildIcon">🏙️</div>
+                    <div class="buildName">Tower</div>
+                    <div class="buildPrice">Lvl 5</div>
+                </button>
+
+                <button class="buildBtn locked" data-type="park">
+                    <div class="buildIcon">🌳</div>
+                    <div class="buildName">Park</div>
+                    <div class="buildPrice">Lvl 2</div>
+                </button>
+
+                <button class="buildBtn locked" data-type="station">
+                    <div class="buildIcon">🚉</div>
+                    <div class="buildName">Station</div>
+                    <div class="buildPrice">Lvl 4</div>
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="rightPanel">
+
+        <div class="panel">
+
+            <div class="panelTitle">
+                City Missions
+            </div>
+
+            <div class="mission">
+
+                <div class="missionTitle">
+                    🏘️ Erste Nachbarschaft
+                </div>
+
+                <div class="missionDesc">
+                    Baue 5 Häuser.
+                </div>
+
+                <div class="missionReward">
+                    +€ 2,000 · +100 XP
+                </div>
+
+            </div>
+
+            <div class="mission">
+
+                <div class="missionTitle">
+                    🏪 Innenstadt
+                </div>
+
+                <div class="missionDesc">
+                    Baue 2 Shops.
+                </div>
+
+                <div class="missionReward">
+                    +€ 3,500 · +150 XP
+                </div>
+
+            </div>
+
+            <div class="mission">
+
+                <div class="missionTitle">
+                    🌆 Großstadt
+                </div>
+
+                <div class="missionDesc">
+                    Erreiche Level 5.
+                </div>
+
+                <div class="missionReward">
+                    +€ 10,000 · +500 XP
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="notification">
+        Stadt gespeichert
+    </div>
+
+    <div id="hint">
+        WASD / Pfeiltasten · Linksklick = Gebäude platzieren · ESC = Bauen abbrechen
+    </div>
+
+    <div id="mobileControls">
+
+        <button class="mobileBtn" id="mLeft">◀</button>
+        <button class="mobileBtn" id="mRight">▶</button>
+        <button class="mobileBtn" id="mForward">▲</button>
+        <button class="mobileBtn" id="mBack">▼</button>
+
+    </div>
+
+</div>
+
+
+<div id="startScreen">
+
+    <div class="startBox">
+
+        <div class="logo">
+            MY<br><span>CITY</span>
+        </div>
+
+        <div class="startSub">
+            3D CITY LIFE SIMULATOR
+        </div>
+
+        <button class="startBtn" id="startBtn">
+            STADT BETRETEN
+        </button>
+
+        <div class="controls">
+            WASD / PFEILTASTEN · FREIE KAMERA<br>
+            BAUE · VERDIENE · LEVEL AUF · ERWEITERE DEINE STADT<br>
+            DEIN SPIELSTAND WIRD AUTOMATISCH GESPEICHERT
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+/* =========================================================
+   MY CITY
+   ========================================================= */
+
+const game = document.getElementById("game");
+
+let scene;
+let camera;
+let renderer;
+
+let raycaster;
+let mouse;
+
+let clock;
+
+let ground;
+
+let selectedType = "house";
+
+let preview = null;
+
+let started = false;
+
+let cityObjects = [];
+
+let cars = [];
+
+let keys = {
+    w:false,
+    a:false,
+    s:false,
+    d:false
+};
+
+let player = {
+    x:0,
+    y:8,
+    z:20,
+    rot:0
+};
+
+
+/* =========================================================
+   GAME DATA
+   ========================================================= */
+
+const saveKey = "MY_CITY_SAVE_V1";
+
+const defaultState = {
+
+    money:10000,
+
+    level:1,
+
+    xp:0,
+
+    population:0,
+
+    buildings:[],
+
+    completed:[],
+
+    time:12
+
+};
+
+let state;
+
+
+/* =========================================================
+   BUILDINGS
+   ========================================================= */
+
+const buildings = {
+
+    house:{
+        name:"Haus",
+        price:500,
+        xp:25,
+        population:5,
+        unlock:1
+    },
+
+    shop:{
+        name:"Shop",
+        price:1200,
+        xp:50,
+        population:8,
+        unlock:1
+    },
+
+    office:{
+        name:"Büro",
+        price:2500,
+        xp:100,
+        population:20,
+        unlock:3
+    },
+
+    tower:{
+        name:"Tower",
+        price:7000,
+        xp:250,
+        population:70,
+        unlock:5
+    },
+
+    park:{
+        name:"Park",
+        price:900,
+        xp:60,
+        population:15,
+        unlock:2
+    },
+
+    station:{
+        name:"Bahnhof",
+        price:5000,
+        xp:180,
+        population:40,
+        unlock:4
+    }
+
+};
+
+
+/* =========================================================
+   LOAD SAVE
+   ========================================================= */
+
+function loadGame(){
+
+    try{
+
+        const saved =
+            localStorage.getItem(saveKey);
+
+        if(saved){
+
+            state =
+                Object.assign(
+                    {},
+                    defaultState,
+                    JSON.parse(saved)
+                );
+
+        }else{
+
+            state =
+                JSON.parse(
+                    JSON.stringify(
+                        defaultState
+                    )
+                );
+        }
+
+    }catch(e){
+
+        state =
+            JSON.parse(
+                JSON.stringify(
+                    defaultState
+                )
+            );
+    }
+
+}
+
+
+/* =========================================================
+   SAVE
+   ========================================================= */
+
+function saveGame(){
+
+    localStorage.setItem(
+        saveKey,
+        JSON.stringify(state)
+    );
+
+    notify("✓ Stadt gespeichert");
+}
+
+
+/* =========================================================
+   INIT
+   ========================================================= */
+
+function init(){
+
+    loadGame();
+
+    scene =
+        new THREE.Scene();
+
+    scene.background =
+        new THREE.Color(
+            0x8dbce2
+        );
+
+    scene.fog =
+        new THREE.Fog(
+            0x8dbce2,
+            80,
+            600
+        );
+
+
+    camera =
+        new THREE.PerspectiveCamera(
+            60,
+            innerWidth/innerHeight,
+            .1,
+            2000
+        );
+
+    camera.position.set(
+        0,
+        18,
+        25
+    );
+
+
+    renderer =
+        new THREE.WebGLRenderer({
+            antialias:true,
+            powerPreference:
+                "high-performance"
+        });
+
+    renderer.setSize(
+        innerWidth,
+        innerHeight
+    );
+
+    renderer.setPixelRatio(
+        Math.min(
+            devicePixelRatio,
+            1.7
+        )
+    );
+
+    renderer.shadowMap.enabled=true;
+
+    renderer.shadowMap.type =
+        THREE.PCFSoftShadowMap;
+
+    game.appendChild(
+        renderer.domElement
+    );
+
+
+    raycaster =
+        new THREE.Raycaster();
+
+    mouse =
+        new THREE.Vector2();
+
+    clock =
+        new THREE.Clock();
+
+
+    createLighting();
+
+    createWorld();
+
+    createRoadNetwork();
+
+    createBuildingsFromSave();
+
+    createTraffic();
+
+    createPreview();
+
+    updateUI();
+
+    animate();
+}
+
+
+/* =========================================================
+   LIGHT
+   ========================================================= */
+
+function createLighting(){
+
+    const hemi =
+        new THREE.HemisphereLight(
+            0xdcecff,
+            0x52604e,
+            2.3
+        );
+
+    scene.add(hemi);
+
+
+    const sun =
+        new THREE.DirectionalLight(
+            0xffffff,
+            3
+        );
+
+    sun.position.set(
+        -100,
+        180,
+        100
+    );
+
+    sun.castShadow=true;
+
+    sun.shadow.mapSize.width=2048;
+    sun.shadow.mapSize.height=2048;
+
+    sun.shadow.camera.left=-300;
+    sun.shadow.camera.right=300;
+    sun.shadow.camera.top=300;
+    sun.shadow.camera.bottom=-300;
+
+    scene.add(sun);
+}
+
+
+/* =========================================================
+   WORLD
+   ========================================================= */
+
+function createWorld(){
+
+    const geo =
+        new THREE.PlaneGeometry(
+            1600,
+            1600
+        );
+
+    const mat =
+        new THREE.MeshStandardMaterial({
+            color:0x628e63,
+            roughness:1
+        });
+
+    ground =
+        new THREE.Mesh(
+            geo,
+            mat
+        );
+
+    ground.rotation.x=
+        -Math.PI/2;
+
+    ground.receiveShadow=true;
+
+    ground.userData.ground=true;
+
+    scene.add(ground);
+
+
+    /* city tiles */
+
+    for(let x=-200;x<=200;x+=20){
+
+        for(let z=-200;z<=200;z+=20){
+
+            const tile =
+                new THREE.Mesh(
+                    new THREE.PlaneGeometry(
+                        19.5,
+                        19.5
+                    ),
+                    new THREE.MeshLambertMaterial({
+                        color:
+                            Math.random()>.5
+                            ?0x679467
+                            :0x628d62
+                    })
+                );
+
+            tile.rotation.x=
+                -Math.PI/2;
+
+            tile.position.set(
+                x,
+                .02,
+                z
+            );
+
+            tile.receiveShadow=true;
+
+            scene.add(tile);
+        }
+    }
+
+
+    /* distant hills */
+
+    for(let i=0;i<30;i++){
+
+        const hill =
+            new THREE.Mesh(
+                new THREE.ConeGeometry(
+                    20+Math.random()*30,
+                    30+Math.random()*40,
+                    8
+                ),
+                new THREE.MeshLambertMaterial({
+                    color:0x557c58
+                })
+            );
+
+        hill.position.set(
+            -400+
+                Math.random()*800,
+            15,
+            -450+
+                Math.random()*200
+        );
+
+        scene.add(hill);
+    }
+}
+
+
+/* =========================================================
+   ROADS
+   ========================================================= */
+
+function createRoadNetwork(){
+
+    for(let i=-200;i<=200;i+=40){
+
+        createRoad(
+            0,
+            i,
+            400,
+            9,
+            0
+        );
+
+        createRoad(
+            i,
+            0,
+            9,
+            400,
+            0
+        );
+    }
+
+
+    /* road markings */
+
+    for(let i=-200;i<=200;i+=20){
+
+        const line =
+            new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    .18,
+                    .03,
+                    8
+                ),
+                new THREE.MeshBasicMaterial({
+                    color:0xffdf7c
+                })
+            );
+
+        line.position.set(
+            0,
+            .06,
+            i
+        );
+
+        scene.add(line);
+    }
+}
+
+
+function createRoad(
+    x,
+    z,
+    width,
+    length,
+    rotation
+){
+
+    const road =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                width,
+                .12,
+                length
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x343b45,
+                roughness:.9
+            })
+        );
+
+    road.position.set(
+        x,
+        .04,
+        z
+    );
+
+    road.rotation.y=
+        rotation;
+
+    road.receiveShadow=true;
+
+    scene.add(road);
+}
+
+
+/* =========================================================
+   BUILDING CREATION
+   ========================================================= */
+
+function createBuilding(
+    type,
+    x,
+    z,
+    rotation=0
+){
+
+    const data =
+        buildings[type];
+
+    if(!data)
+        return null;
+
+    const group =
+        new THREE.Group();
+
+    group.userData.type=type;
+
+    if(type==="house")
+        createHouse(group);
+
+    if(type==="shop")
+        createShop(group);
+
+    if(type==="office")
+        createOffice(group);
+
+    if(type==="tower")
+        createTower(group);
+
+    if(type==="park")
+        createPark(group);
+
+    if(type==="station")
+        createStation(group);
+
+
+    group.position.set(
+        x,
+        0,
+        z
+    );
+
+    group.rotation.y=rotation;
+
+    group.traverse(
+        object=>{
+
+            if(object.isMesh){
+
+                object.castShadow=true;
+                object.receiveShadow=true;
+            }
+        }
+    );
+
+    scene.add(group);
+
+    cityObjects.push(group);
+
+    return group;
+}
+
+
+/* =========================================================
+   HOUSE
+   ========================================================= */
+
+function createHouse(g){
+
+    const body =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                10,
+                7,
+                9
+            ),
+            new THREE.MeshStandardMaterial({
+                color:
+                    [0xe5d4bd,
+                     0xc7d8df,
+                     0xd9c6d5]
+                    [Math.floor(Math.random()*3)]
+            })
+        );
+
+    body.position.y=3.5;
+
+    g.add(body);
+
+
+    const roof =
+        new THREE.Mesh(
+            new THREE.ConeGeometry(
+                7.5,
+                4,
+                4
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x4b4f58
+            })
+        );
+
+    roof.rotation.y=
+        Math.PI/4;
+
+    roof.position.y=9;
+
+    g.add(roof);
+
+
+    addWindows(
+        g,
+        4.2,
+        2.7
+    );
+
+
+    addDoor(
+        g,
+        0,
+        1.2,
+        4.55
+    );
+}
+
+
+/* =========================================================
+   SHOP
+   ========================================================= */
+
+function createShop(g){
+
+    const body =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                12,
+                6,
+                10
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0xdfe5eb
+            })
+        );
+
+    body.position.y=3;
+
+    g.add(body);
+
+
+    const glass =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                10,
+                3,
+                .12
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x54a8c7,
+                metalness:.25,
+                roughness:.1
+            })
+        );
+
+    glass.position.set(
+        0,
+        2.4,
+        5.05
+    );
+
+    g.add(glass);
+
+
+    const sign =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                8,
+                1.2,
+                .2
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0xf2a83b
+            })
+        );
+
+    sign.position.set(
+        0,
+        5.3,
+        5.15
+    );
+
+    g.add(sign);
+
+
+    addDoor(
+        g,
+        0,
+        1.2,
+        5.15
+    );
+}
+
+
+/* =========================================================
+   OFFICE
+   ========================================================= */
+
+function createOffice(g){
+
+    const body =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                13,
+                30,
+                12
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x71808f,
+                metalness:.15
+            })
+        );
+
+    body.position.y=15;
+
+    g.add(body);
+
+
+    for(
+        let y=4;
+        y<29;
+        y+=4
+    ){
+
+        for(
+            let x=-4;
+            x<=4;
+            x+=4
+        ){
+
+            const window =
+                new THREE.Mesh(
+                    new THREE.BoxGeometry(
+                        2.2,
+                        2,
+                        .12
+                    ),
+                    new THREE.MeshStandardMaterial({
+                        color:
+                            Math.random()>.25
+                            ?0x8ed5ed
+                            :0x29333d,
+                        emissive:
+                            Math.random()>.8
+                            ?0x345e65
+                            :0x000000
+                    })
+                );
+
+            window.position.set(
+                x,
+                y,
+                6.08
+            );
+
+            g.add(window);
+        }
+    }
+}
+
+
+/* =========================================================
+   TOWER
+   ========================================================= */
+
+function createTower(g){
+
+    const body =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                18,
+                65,
+                18
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x5e748a,
+                metalness:.25,
+                roughness:.35
+            })
+        );
+
+    body.position.y=32.5;
+
+    g.add(body);
+
+
+    for(
+        let y=5;
+        y<62;
+        y+=5
+    ){
+
+        const strip =
+            new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    15,
+                    1.6,
+                    .18
+                ),
+                new THREE.MeshBasicMaterial({
+                    color:
+                        Math.random()>.2
+                        ?0x9bdaf2
+                        :0x293c4b
+                })
+            );
+
+        strip.position.set(
+            0,
+            y,
+            9.12
+        );
+
+        g.add(strip);
+    }
+
+
+    const antenna =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .15,
+                .15,
+                18,
+                8
+            ),
+            new THREE.MeshBasicMaterial({
+                color:0xd9e3ed
+            })
+        );
+
+    antenna.position.y=74;
+
+    g.add(antenna);
+}
+
+
+/* =========================================================
+   PARK
+   ========================================================= */
+
+function createPark(g){
+
+    const grass =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                16,
+                .25,
+                14
+            ),
+            new THREE.MeshLambertMaterial({
+                color:0x4f9b58
+            })
+        );
+
+    grass.position.y=.15;
+
+    g.add(grass);
+
+
+    for(let i=0;i<7;i++){
+
+        const tree =
+            new THREE.Group();
+
+        const trunk =
+            new THREE.Mesh(
+                new THREE.CylinderGeometry(
+                    .35,
+                    .45,
+                    2.5,
+                    7
+                ),
+                new THREE.MeshLambertMaterial({
+                    color:0x795238
+                })
+            );
+
+        trunk.position.y=1.25;
+
+        tree.add(trunk);
+
+
+        const leaves =
+            new THREE.Mesh(
+                new THREE.SphereGeometry(
+                    2.1,
+                    8,
+                    6
+                ),
+                new THREE.MeshLambertMaterial({
+                    color:0x286e3a
+                })
+            );
+
+        leaves.position.y=3.5;
+
+        tree.add(leaves);
+
+        tree.position.set(
+            -6+Math.random()*12,
+            .2,
+            -5+Math.random()*10
+        );
+
+        g.add(tree);
+    }
+}
+
+
+/* =========================================================
+   STATION
+   ========================================================= */
+
+function createStation(g){
+
+    const body =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                18,
+                7,
+                14
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0xb9c0c7
+            })
+        );
+
+    body.position.y=3.5;
+
+    g.add(body);
+
+
+    const roof =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                20,
+                .7,
+                16
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x394452
+            })
+        );
+
+    roof.position.y=7.4;
+
+    g.add(roof);
+
+
+    const glass =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                15,
+                4,
+                .15
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x72c8df,
+                metalness:.2
+            })
+        );
+
+    glass.position.set(
+        0,
+        3.5,
+        7.1
+    );
+
+    g.add(glass);
+}
+
+
+/* =========================================================
+   WINDOWS / DOOR
+   ========================================================= */
+
+function addWindows(
+    g,
+    width,
+    height
+){
+
+    const mat =
+        new THREE.MeshStandardMaterial({
+            color:0x7ec9e2,
+            roughness:.15,
+            metalness:.1
+        });
+
+    for(
+        let x=-width;
+        x<=width;
+        x+=4
+    ){
+
+        const w =
+            new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    1.8,
+                    1.8,
+                    .12
+                ),
+                mat
+            );
+
+        w.position.set(
+            x,
+            height,
+            4.55
+        );
+
+        g.add(w);
+    }
+}
+
+
+function addDoor(
+    g,
+    x,
+    y,
+    z
+){
+
+    const door =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                1.8,
+                2.8,
+                .15
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x493d38
+            })
+        );
+
+    door.position.set(
+        x,
+        y,
+        z
+    );
+
+    g.add(door);
+}
+
+
+/* =========================================================
+   LOAD BUILDINGS
+   ========================================================= */
+
+function createBuildingsFromSave(){
+
+    for(
+        const item of state.buildings
+    ){
+
+        createBuilding(
+            item.type,
+            item.x,
+            item.z,
+            item.rotation || 0
+        );
+    }
+}
+
+
+/* =========================================================
+   TRAFFIC
+   ========================================================= */
+
+function createTraffic(){
+
+    for(let i=0;i<18;i++){
+
+        const car =
+            createTrafficCar();
+
+        car.position.set(
+            Math.random()>.5
+            ? -200
+            : 200,
+
+            .6,
+
+            -200+
+            Math.random()*400
+        );
+
+        car.userData.speed =
+            7+
+            Math.random()*12;
+
+        car.userData.axis =
+            Math.random()>.5
+            ?"x"
+            :"z";
+
+        scene.add(car);
+
+        cars.push(car);
+    }
+}
+
+
+function createTrafficCar(){
+
+    const g =
+        new THREE.Group();
+
+    const body =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                2.3,
+                .8,
+                4.2
+            ),
+            new THREE.MeshStandardMaterial({
+                color:
+                    new THREE.Color(
+                        Math.random(),
+                        Math.random(),
+                        Math.random()
+                    )
+            })
+        );
+
+    body.position.y=.8;
+
+    g.add(body);
+
+
+    const roof =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                1.6,
+                .6,
+                1.9
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x242932
+            })
+        );
+
+    roof.position.y=1.35;
+
+    g.add(roof);
+
+    return g;
+}
+
+
+function updateTraffic(dt){
+
+    for(
+        const car of cars
+    ){
+
+        if(
+            car.userData.axis==="x"
+        ){
+
+            car.position.x +=
+                car.userData.speed*dt;
+
+            if(car.position.x>220)
+                car.position.x=-220;
+
+        }else{
+
+            car.position.z +=
+                car.userData.speed*dt;
+
+            if(car.position.z>220)
+                car.position.z=-220;
+        }
+    }
+}
+
+
+/* =========================================================
+   BUILD PREVIEW
+   ========================================================= */
+
+function createPreview(){
+
+    preview =
+        createBuilding(
+            "house",
+            0,
+            0
+        );
+
+    if(preview){
+
+        scene.remove(preview);
+
+        cityObjects.pop();
+
+        preview.traverse(
+            object=>{
+
+                if(object.material){
+
+                    object.material =
+                        object.material.clone();
+
+                    object.material.transparent=true;
+                    object.material.opacity=.45;
+                }
+            }
+        );
+
+        scene.add(preview);
+    }
+}
+
+
+/* =========================================================
+   BUILDING PLACEMENT
+   ========================================================= */
+
+function updatePreview(){
+
+    if(!preview)
+        return;
+
+    const ray =
+        new THREE.Raycaster();
+
+    ray.setFromCamera(
+        mouse,
+        camera
+    );
+
+    const hits =
+        ray.intersectObject(
+            ground
+        );
+
+    if(!hits.length)
+        return;
+
+    const point =
+        hits[0].point;
+
+    const grid=5;
+
+    const x=
+        Math.round(
+            point.x/grid
+        )*grid;
+
+    const z=
+        Math.round(
+            point.z/grid
+        )*grid;
+
+    preview.position.x=x;
+    preview.position.z=z;
+
+
+    const data =
+        buildings[
+            selectedType
+        ];
+
+    if(
+        data &&
+        state.money>=data.price
+    ){
+
+        preview.visible=true;
+
+    }else{
+
+        preview.visible=false;
+    }
+}
+
+
+function placeBuilding(){
+
+    const data =
+        buildings[
+            selectedType
+        ];
+
+    if(!data)
+        return;
+
+    if(
+        state.level<
+        data.unlock
+    ){
+
+        notify(
+            "🔒 Level "+
+            data.unlock+
+            " benötigt"
+        );
+
+        return;
+    }
+
+    if(
+        state.money<
+        data.price
+    ){
+
+        notify(
+            "💸 Nicht genug Geld"
+        );
+
+        return;
+    }
+
+    if(!preview.visible)
+        return;
+
+
+    const x=
+        Math.round(
+            preview.position.x/5
+        )*5;
+
+    const z=
+        Math.round(
+            preview.position.z/5
+        )*5;
+
+
+    /* avoid road center */
+
+    if(
+        Math.abs(x%40)<10 ||
+        Math.abs(z%40)<10
+    ){
+
+        notify(
+            "🚧 Hier ist eine Straße"
+        );
+
+        return;
+    }
+
+
+    state.money -=
+        data.price;
+
+    state.xp +=
+        data.xp;
+
+    state.population +=
+        data.population;
+
+
+    state.buildings.push({
+
+        type:selectedType,
+
+        x:x,
+
+        z:z,
+
+        rotation:0
+
+    });
+
+
+    createBuilding(
+        selectedType,
+        x,
+        z,
+        0
+    );
+
+
+    checkLevel();
+
+    checkMissions();
+
+    updateUI();
+
+    saveGame();
+}
+
+
+/* =========================================================
+   LEVEL SYSTEM
+   ========================================================= */
+
+function xpNeeded(){
+
+    return (
+        100+
+        (state.level-1)*100
+    );
+}
+
+
+function checkLevel(){
+
+    let changed=false;
+
+    while(
+        state.xp>=xpNeeded()
+    ){
+
+        state.xp -=
+            xpNeeded();
+
+        state.level++;
+
+        state.money +=
+            state.level*750;
+
+        changed=true;
+    }
+
+    if(changed){
+
+        notify(
+            "🎉 LEVEL "+
+            state.level+
+            " erreicht!"
+        );
+
+        updateBuildingLocks();
+    }
+}
+
+
+function updateBuildingLocks(){
+
+    document
+        .querySelectorAll(
+            ".buildBtn"
+        )
+        .forEach(btn=>{
+
+            const type =
+                btn.dataset.type;
+
+            const data =
+                buildings[type];
+
+            if(
+                state.level>=
+                data.unlock
+            ){
+
+                btn.classList.remove(
+                    "locked"
+                );
+
+                const price =
+                    btn.querySelector(
+                        ".buildPrice"
+                    );
+
+                if(price)
+                    price.textContent=
+                        "€ "+
+                        data.price.toLocaleString(
+                            "de-DE"
+                        );
+            }
+        });
+}
+
+
+/* =========================================================
+   MISSIONS
+   ========================================================= */
+
+function checkMissions(){
+
+    const houses =
+        state.buildings.filter(
+            b=>b.type==="house"
+        ).length;
+
+    const shops =
+        state.buildings.filter(
+            b=>b.type==="shop"
+        ).length;
+
+
+    if(
+        houses>=5 &&
+        !state.completed.includes(
+            "houses"
+        )
+    ){
+
+        state.completed.push(
+            "houses"
+        );
+
+        state.money+=2000;
+        state.xp+=100;
+
+        notify(
+            "🏘️ Mission abgeschlossen!"
+        );
+    }
+
+
+    if(
+        shops>=2 &&
+        !state.completed.includes(
+            "shops"
+        )
+    ){
+
+        state.completed.push(
+            "shops"
+        );
+
+        state.money+=3500;
+        state.xp+=150;
+
+        notify(
+            "🏪 Innenstadt-Mission!"
+        );
+    }
+
+
+    if(
+        state.level>=5 &&
+        !state.completed.includes(
+            "level5"
+        )
+    ){
+
+        state.completed.push(
+            "level5"
+        );
+
+        state.money+=10000;
+        state.xp+=500;
+
+        notify(
+            "🌆 Großstadt erreicht!"
+        );
+    }
+
+    checkLevel();
+}
+
+
+/* =========================================================
+   UI
+   ========================================================= */
+
+function updateUI(){
+
+    document.getElementById(
+        "money"
+    ).textContent=
+        "€ "+
+        Math.floor(
+            state.money
+        ).toLocaleString(
+            "de-DE"
+        );
+
+    document.getElementById(
+        "level"
+    ).textContent=
+        state.level;
+
+    document.getElementById(
+        "population"
+    ).textContent=
+        state.population.toLocaleString(
+            "de-DE"
+        );
+
+    document.getElementById(
+        "buildings"
+    ).textContent=
+        state.buildings.length;
+
+    const percent =
+        Math.min(
+            100,
+            state.xp/xpNeeded()*100
+        );
+
+    document.getElementById(
+        "xpFill"
+    ).style.width=
+        percent+"%";
+
+    updateBuildingLocks();
+}
+
+
+/* =========================================================
+   MONEY INCOME
+   ========================================================= */
+
+let incomeTimer=0;
+
+function cityIncome(dt){
+
+    incomeTimer+=dt;
+
+    if(
+        incomeTimer>=10
+    ){
+
+        incomeTimer=0;
+
+        const income =
+            Math.floor(
+                state.population*.8
+            );
+
+        if(income>0){
+
+            state.money+=income;
+
+            updateUI();
+        }
+    }
+}
+
+
+/* =========================================================
+   CAMERA
+   ========================================================= */
+
+function updateCamera(dt){
+
+    const speed=35;
+
+    let forward=0;
+    let side=0;
+
+    if(keys.w) forward+=1;
+    if(keys.s) forward-=1;
+    if(keys.a) side-=1;
+    if(keys.d) side+=1;
+
+
+    const direction =
+        new THREE.Vector3(
+            Math.sin(player.rot),
+            0,
+            Math.cos(player.rot)
+        );
+
+    const right =
+        new THREE.Vector3(
+            Math.cos(player.rot),
+            0,
+            -Math.sin(player.rot)
+        );
+
+
+    player.x +=
+        (
+            direction.x*forward+
+            right.x*side
+        )*
+        speed*dt;
+
+    player.z +=
+        (
+            direction.z*forward+
+            right.z*side
+        )*
+        speed*dt;
+
+
+    const target =
+        new THREE.Vector3(
+            player.x,
+            player.y,
+            player.z
+        );
+
+
+    camera.position.lerp(
+        target,
+        Math.min(
+            1,
+            dt*4
+        )
+    );
+
+
+    camera.lookAt(
+        player.x,
+        0,
+        player.z
+    );
+}
+
+
+/* =========================================================
+   MOUSE
+   ========================================================= */
+
+rendererMouseEvents();
+
+
+function rendererMouseEvents(){
+
+    renderer.domElement.addEventListener(
+        "mousemove",
+        e=>{
+
+            mouse.x=
+                e.clientX/
+                innerWidth*
+                2-1;
+
+            mouse.y=
+                -(e.clientY/
+                innerHeight)*
+                2+1;
+
+            updatePreview();
+        }
+    );
+
+
+    renderer.domElement.addEventListener(
+        "click",
+        e=>{
+
+            if(!started)
+                return;
+
+            placeBuilding();
+        }
+    );
+
+
+    renderer.domElement.addEventListener(
+        "contextmenu",
+        e=>{
+            e.preventDefault();
+
+            if(preview){
+
+                preview.visible=false;
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+   BUILD BUTTONS
+   ========================================================= */
+
+document
+    .querySelectorAll(
+        ".buildBtn"
+    )
+    .forEach(btn=>{
+
+        btn.addEventListener(
+            "click",
+            ()=>{
+
+                const type =
+                    btn.dataset.type;
+
+                if(
+                    state.level<
+                    buildings[type].unlock
+                ){
+
+                    notify(
+                        "🔒 Noch gesperrt"
+                    );
+
+                    return;
+                }
+
+                selectedType=type;
+
+                document
+                    .querySelectorAll(
+                        ".buildBtn"
+                    )
+                    .forEach(
+                        b=>b.classList.remove(
+                            "active"
+                        )
+                    );
+
+                btn.classList.add(
+                    "active"
+                );
+
+
+                rebuildPreview();
+            }
+        );
+    });
+
+
+function rebuildPreview(){
+
+    if(preview){
+
+        scene.remove(preview);
+
+        const index =
+            cityObjects.indexOf(
+                preview
+            );
+
+        if(index>=0)
+            cityObjects.splice(
+                index,
+                1
+            );
+    }
+
+
+    preview =
+        createBuilding(
+            selectedType,
+            0,
+            0
+        );
+
+    scene.remove(preview);
+
+    const index =
+        cityObjects.indexOf(
+            preview
+        );
+
+    if(index>=0)
+        cityObjects.splice(
+            index,
+            1
+        );
+
+
+    preview.traverse(
+        object=>{
+
+            if(object.material){
+
+                object.material =
+                    object.material.clone();
+
+                object.material.transparent=true;
+                object.material.opacity=.45;
+            }
+        }
+    );
+
+    scene.add(preview);
+}
+
+
+/* =========================================================
+   KEYBOARD
+   ========================================================= */
+
+window.addEventListener(
+    "keydown",
+    e=>{
+
+        if(e.key.toLowerCase()==="w")
+            keys.w=true;
+
+        if(e.key.toLowerCase()==="a")
+            keys.a=true;
+
+        if(e.key.toLowerCase()==="s")
+            keys.s=true;
+
+        if(e.key.toLowerCase()==="d")
+            keys.d=true;
+
+        if(e.key==="Escape"){
+
+            if(preview)
+                preview.visible=false;
+        }
+    }
+);
+
+
+window.addEventListener(
+    "keyup",
+    e=>{
+
+        if(e.key.toLowerCase()==="w")
+            keys.w=false;
+
+        if(e.key.toLowerCase()==="a")
+            keys.a=false;
+
+        if(e.key.toLowerCase()==="s")
+            keys.s=false;
+
+        if(e.key.toLowerCase()==="d")
+            keys.d=false;
+    }
+);
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+function mobileButton(
+    id,
+    key
+){
+
+    const el=
+        document.getElementById(id);
+
+    el.addEventListener(
+        "touchstart",
+        e=>{
+            e.preventDefault();
+            keys[key]=true;
+        },
+        {passive:false}
+    );
+
+    el.addEventListener(
+        "touchend",
+        e=>{
+            e.preventDefault();
+            keys[key]=false;
+        },
+        {passive:false}
+    );
+}
+
+mobileButton(
+    "mForward",
+    "w"
+);
+
+mobileButton(
+    "mBack",
+    "s"
+);
+
+mobileButton(
+    "mLeft",
+    "a"
+);
+
+mobileButton(
+    "mRight",
+    "d"
+);
+
+
+/* =========================================================
+   NOTIFICATION
+   ========================================================= */
+
+let notificationTimer;
+
+function notify(text){
+
+    const el =
+        document.getElementById(
+            "notification"
+        );
+
+    el.textContent=text;
+
+    el.classList.add(
+        "show"
+    );
+
+    clearTimeout(
+        notificationTimer
+    );
+
+    notificationTimer=
+        setTimeout(
+            ()=>{
+                el.classList.remove(
+                    "show"
+                );
+            },
+            1800
+        );
+}
+
+
+/* =========================================================
+   DAY / NIGHT
+   ========================================================= */
+
+function updateDayNight(dt){
+
+    state.time +=
+        dt*.35;
+
+    if(
+        state.time>=24
+    )
+        state.time=0;
+
+
+    const hour=
+        state.time;
+
+
+    let daylight=
+        Math.max(
+            0,
+            Math.sin(
+                (hour-6)/
+                12*
+                Math.PI
+            )
+        );
+
+
+    const sky =
+        new THREE.Color();
+
+    sky.setHSL(
+        .58,
+        .45,
+        .55*daylight+
+        .06
+    );
+
+    scene.background=
+        sky;
+
+    scene.fog.color=
+        sky;
+}
+
+
+/* =========================================================
+   SAVE PERIODICALLY
+   ========================================================= */
+
+let saveTimer=0;
+
+function automaticSave(dt){
+
+    saveTimer+=dt;
+
+    if(
+        saveTimer>=20
+    ){
+
+        saveTimer=0;
+
+        localStorage.setItem(
+            saveKey,
+            JSON.stringify(state)
+        );
+    }
+}
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+document
+    .getElementById(
+        "startBtn"
+    )
+    .addEventListener(
+        "click",
+        ()=>{
+
+            started=true;
+
+            document
+                .getElementById(
+                    "startScreen"
+                )
+                .style.display="none";
+
+            notify(
+                "Willkommen in deiner Stadt!"
+            );
+        }
+    );
+
+
+/* =========================================================
+   RESIZE
+   ========================================================= */
+
+window.addEventListener(
+    "resize",
+    ()=>{
+
+        camera.aspect=
+            innerWidth/
+            innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+    }
+);
+
+
+/* =========================================================
+   GAME LOOP
+   ========================================================= */
+
+let last=
+    performance.now();
+
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    const now=
+        performance.now();
+
+    const dt=
+        Math.min(
+            .05,
+            (now-last)/1000
+        );
+
+    last=now;
+
+
+    if(started){
+
+        updateCamera(dt);
+
+        updateTraffic(dt);
+
+        cityIncome(dt);
+
+        updateDayNight(dt);
+
+        automaticSave(dt);
+
+        updatePreview();
+    }
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+
+/* =========================================================
+   START ENGINE
+   ========================================================= */
+
+init();
+
+</script>
+
+</body>
+</html>
