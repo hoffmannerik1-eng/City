@@ -563,6 +563,7 @@ canvas{
     <button class="iconBtn" id="infoBtn">ⓘ</button>
     <button class="iconBtn" id="rotateBtn">↻</button>
     <button class="iconBtn" id="demolishBtn">🗑️</button>
+    <button class="iconBtn" id="peopleBtn" title="KI-Bewohner">👥</button>
     <button class="iconBtn" id="menuBtn">☰</button>
 </div>
 
@@ -621,6 +622,14 @@ canvas{
     </div>
 </div>
 
+<div id="peoplePanel" class="panel" style="right:72px;top:96px;width:min(360px,calc(100% - 24px));max-height:72vh;overflow:auto;display:none;padding:16px;z-index:65">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div><div class="panelTitle">🧠 KI-Bewohner</div><div class="panelSub">Jeder Mensch hat sein eigenes Gehirn, Geld und Ziele.</div></div>
+    <button id="closePeople" class="iconBtn" style="width:38px;height:38px">✕</button>
+  </div>
+  <div id="residentStats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"></div>
+  <div id="residentList"></div>
+</div>
 <div id="notifications"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -894,6 +903,7 @@ function init(){
     setupMissions();
 
     loadGame();
+    startResidentAI();
 
     updateUI();
 
@@ -2549,6 +2559,7 @@ function animate(){
     if(!paused){
 
         updateCars(dt);
+        updateResidents(dt);
         updateDayNight(dt);
 
         /* subtle building animation */
@@ -2580,6 +2591,267 @@ setInterval(()=>{
         saveGame();
 
 },15000);
+
+
+/* =========================================================
+   AUTONOME KI-BEWOHNER – AI CITY FOUNDATION
+   Jeder Bewohner besitzt ein eigenes, dauerhaftes Agent-Gehirn.
+   ========================================================= */
+
+const RESIDENT_SAVE_KEY = "city_empire_resident_agents_v1";
+const RESIDENT_NAMES = ["Anna","Max","Lena","Ben","Mia","Noah","Emma","Leon","Sofia","Paul","Luca","Nina","Finn","Ella","Jonas","Mila","Tom","Clara","Emil","Lilly"];
+const RESIDENT_JOBS = [
+  {name:"Pizzabäcker",icon:"🍕",salary:145,work:"shop"},
+  {name:"Verkäufer",icon:"🛒",salary:125,work:"shop"},
+  {name:"Koch",icon:"👨‍🍳",salary:135,work:"shop"},
+  {name:"Bürokraft",icon:"💼",salary:175,work:"office"},
+  {name:"Mechaniker",icon:"🔧",salary:155,work:"shop"},
+  {name:"Unternehmer",icon:"📈",salary:0,work:"business"},
+  {name:"Bauarbeiter",icon:"🏗️",salary:165,work:"office"},
+  {name:"Arzt",icon:"🩺",salary:210,work:"hospital"},
+  {name:"Lehrer",icon:"📚",salary:180,work:"school"}
+];
+const residentAgents = [];
+let residentIdCounter = 1;
+let residentDecisionClock = 0;
+let residentEconomyClock = 0;
+let selectedResident = null;
+
+function createResidentMesh(color){
+  const person = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({color:0xe1b58f,roughness:.9});
+  const clothes = new THREE.MeshStandardMaterial({color,roughness:.85});
+  const dark = new THREE.MeshStandardMaterial({color:0x26313b,roughness:.9});
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.23,10,8),skin);
+  head.position.y=1.48; person.add(head);
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.19,.48,3,7),clothes);
+  torso.position.y=.98; person.add(torso);
+  const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(.065,.075,.42,7),dark);
+  const rightLeg = leftLeg.clone();
+  leftLeg.position.set(-.105,.34,0); rightLeg.position.set(.105,.34,0);
+  person.add(leftLeg,rightLeg);
+  const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(.055,.065,.4,7),clothes);
+  const rightArm = leftArm.clone();
+  leftArm.position.set(-.25,1.0,0); rightArm.position.set(.25,1.0,0);
+  leftArm.rotation.z=-.12; rightArm.rotation.z=.12;
+  person.add(leftArm,rightArm);
+  person.userData.parts={leftLeg,rightLeg,leftArm,rightArm};
+  person.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+  scene.add(person);
+  return person;
+}
+
+function residentHomeSlots(){
+  const homes=buildings.filter(b=>["house","apartment","tower"].includes(b.userData.type));
+  return homes.length?homes:[{position:new THREE.Vector3(-22,0,-22)}];
+}
+function findResidentWork(jobName){
+  const preferred=jobName==="Bürokraft"||jobName==="Bauarbeiter"?"office":
+    jobName==="Arzt"?"hospital":jobName==="Lehrer"?"school":"shop";
+  return buildings.find(b=>b.userData.type===preferred) ||
+         buildings.find(b=>b.userData.type==="shop") ||
+         buildings.find(b=>b.userData.type==="office") ||
+         buildings.find(b=>["house","apartment"].includes(b.userData.type)) ||
+         null;
+}
+function makeResident(name, saved){
+  const job=RESIDENT_JOBS[Math.floor(Math.random()*RESIDENT_JOBS.length)];
+  const home=residentHomeSlots()[(residentAgents.length)%residentHomeSlots().length];
+  const startX=(home.position?.x||0)+(Math.random()-.5)*5;
+  const startZ=(home.position?.z||0)+(Math.random()-.5)*5;
+  const palette=[0x477bd1,0xd45e65,0x49a77c,0xb17bd2,0xd59a45,0x4ba9b8];
+  const agent={
+    id:saved?.id||"resident-"+(residentIdCounter++),
+    name:saved?.name||name,
+    age:saved?.age|| (19+Math.floor(Math.random()*45)),
+    job:saved?.job||job.name,
+    salary:saved?.salary??job.salary,
+    balance:saved?.balance??(350+Math.floor(Math.random()*1800)),
+    homeIndex:saved?.homeIndex??(residentAgents.length%Math.max(1,residentHomeSlots().length)),
+    hunger:saved?.hunger??(25+Math.random()*55),
+    happiness:saved?.happiness??(60+Math.random()*35),
+    personality:saved?.personality||["freundlich","ehrgeizig","ruhig","neugierig","sparsam"][Math.floor(Math.random()*5)],
+    goal:saved?.goal||"Geld sparen und ein gutes Leben führen",
+    action:"Unterwegs",
+    thought:"Ich überlege, was ich heute machen möchte.",
+    memories:saved?.memories||["Ich bin in dieser Stadt angekommen."],
+    destination:null,
+    speed:1.4+Math.random()*.7,
+    phase:Math.random()*6.28,
+    brain:{id:"brain-"+(saved?.id||residentIdCounter),independent:true,decisions:0,lastDecision:"Start"},
+    mesh:createResidentMesh(palette[residentAgents.length%palette.length]),
+    home:null
+  };
+  agent.home=residentHomeSlots()[agent.homeIndex%residentHomeSlots().length];
+  agent.mesh.position.set(startX,.02,startZ);
+  agent.mesh.userData.residentId=agent.id;
+  if(saved?.memories) agent.memories=saved.memories.slice(-12);
+  residentAgents.push(agent);
+  return agent;
+}
+function residentRemember(a,message){
+  a.memories.push("Tag "+state.day+": "+message);
+  if(a.memories.length>12)a.memories.shift();
+}
+function residentChooseDestination(a){
+  const home=a.home?.position||new THREE.Vector3(-22,0,-22);
+  const shops=buildings.filter(b=>b.userData.type==="shop");
+  const parks=buildings.filter(b=>b.userData.type==="park");
+  const offices=buildings.filter(b=>["office","hospital","school"].includes(b.userData.type));
+  let target=null;
+  const hour=state.hour;
+  if(a.hunger>68 && shops.length){
+    target=shops[Math.floor(Math.random()*shops.length)];
+    a.action="Essen kaufen"; a.thought="Ich bin hungrig und kaufe mir etwas zu essen.";
+    a.balance=Math.max(0,a.balance-12); a.hunger=Math.max(5,a.hunger-48);
+  }else if(hour>=8&&hour<17){
+    target=findResidentWork(a.job);
+    a.action="Arbeiten"; a.thought="Ich gehe meiner Arbeit nach und verdiene Geld.";
+  }else if(a.balance>1800 && Math.random()<.10){
+    target=shops[0]||null; a.action="Einkaufen"; a.thought="Ich möchte etwas für mein Zuhause kaufen.";
+    a.balance-=45;
+  }else if(parks.length&&Math.random()<.45){
+    target=parks[Math.floor(Math.random()*parks.length)];
+    a.action="Freizeit"; a.thought="Ich mache eine Pause im Park.";
+    a.happiness=Math.min(100,a.happiness+5);
+  }else{
+    target=home; a.action="Nach Hause gehen"; a.thought="Ich gehe nach Hause und erhole mich.";
+  }
+  if(!target)target=home;
+  const p=target.position||home;
+  a.destination=new THREE.Vector3(p.x+(Math.random()-.5)*3,0,p.z+(Math.random()-.5)*3);
+  a.brain.decisions++;
+  a.brain.lastDecision=a.action;
+  residentRemember(a,a.thought);
+}
+function updateResidentMovement(a,dt){
+  if(!a.destination)residentChooseDestination(a);
+  const p=a.mesh.position, d=a.destination;
+  const dx=d.x-p.x,dz=d.z-p.z,dist=Math.hypot(dx,dz);
+  if(dist<.65){
+    a.destination=null;
+    return;
+  }
+  const step=Math.min(dist,a.speed*dt);
+  p.x+=dx/dist*step;p.z+=dz/dist*step;
+  a.mesh.rotation.y=Math.atan2(dx,dz);
+  a.phase+=dt*8;
+  const swing=Math.sin(a.phase)*.55;
+  const parts=a.mesh.userData.parts;
+  parts.leftLeg.rotation.x=swing;parts.rightLeg.rotation.x=-swing;
+  parts.leftArm.rotation.x=-swing*.65;parts.rightArm.rotation.x=swing*.65;
+  a.mesh.position.y=.03+Math.abs(Math.sin(a.phase*2))*.035;
+}
+function residentEconomyTick(){
+  for(const a of residentAgents){
+    if(a.action==="Arbeiten" && a.salary>0){
+      a.balance+=a.salary;
+      a.thought="Mein Gehalt ist angekommen. Ich plane, wofür ich spare.";
+      residentRemember(a,"Gehalt erhalten: "+a.salary+" €");
+    }
+    a.hunger=Math.min(100,a.hunger+12);
+    a.happiness=Math.max(15,Math.min(100,a.happiness+(Math.random()*6-2)));
+    if(a.balance>2500 && a.personality==="ehrgeizig" && !a.ownsBusiness && Math.random()<.035){
+      tryOpenResidentBusiness(a);
+    }
+  }
+  refreshResidentPanel();
+  saveResidents();
+}
+function tryOpenResidentBusiness(a){
+  const candidates=[[-34,-34],[-46,18],[36,-38],[42,42],[-38,46],[48,-18]];
+  const spot=candidates.find(([x,z])=>isPlacementValid(x,z,"shop"));
+  if(!spot || a.balance<BUILDINGS.shop.cost*2)return;
+  a.balance-=BUILDINGS.shop.cost;
+  const shop=createBuilding("shop",spot[0],spot[1],0);
+  shop.userData.owner=a.id;
+  shop.userData.businessName=a.name+"s Pizzeria";
+  a.ownsBusiness=true;
+  a.job="Unternehmer";
+  a.salary=0;
+  residentRemember(a,"Ich habe "+shop.userData.businessName+" gegründet.");
+  notify("🏪 "+a.name+" hat "+shop.userData.businessName+" eröffnet!");
+  recalculatePopulation();
+  saveGame();
+}
+function startResidentAI(){
+  const savedRaw=localStorage.getItem(RESIDENT_SAVE_KEY);
+  let saved=[];
+  try{saved=savedRaw?JSON.parse(savedRaw):[];}catch(e){saved=[];}
+  const targetCount=Math.max(12,Math.min(36,Math.round(state.population||12)));
+  for(let i=0;i<targetCount;i++){
+    const old=saved.find(x=>x.id==="resident-"+(i+1))||saved[i];
+    makeResident(RESIDENT_NAMES[i%RESIDENT_NAMES.length],old);
+  }
+  for(const a of residentAgents)residentChooseDestination(a);
+  refreshResidentPanel();
+  saveResidents();
+  document.getElementById("peopleBtn").onclick=()=>{
+    const p=document.getElementById("peoplePanel");
+    p.style.display=p.style.display==="block"?"none":"block";
+    refreshResidentPanel();
+  };
+  document.getElementById("closePeople").onclick=()=>document.getElementById("peoplePanel").style.display="none";
+}
+function saveResidents(){
+  try{
+    localStorage.setItem(RESIDENT_SAVE_KEY,JSON.stringify(residentAgents.map(a=>({
+      id:a.id,name:a.name,age:a.age,job:a.job,salary:a.salary,balance:a.balance,
+      homeIndex:a.homeIndex,hunger:a.hunger,happiness:a.happiness,
+      personality:a.personality,goal:a.goal,memories:a.memories.slice(-12),
+      ownsBusiness:!!a.ownsBusiness
+    }))));
+  }catch(e){console.warn("Bewohner konnten nicht gespeichert werden",e);}
+}
+function refreshResidentPanel(){
+  const stats=document.getElementById("residentStats");
+  const list=document.getElementById("residentList");
+  if(!stats||!list)return;
+  const totalMoney=residentAgents.reduce((n,a)=>n+a.balance,0);
+  stats.innerHTML=`
+    <div class="mission"><b>${residentAgents.length}</b><p>Eigenständige KI-Menschen</p></div>
+    <div class="mission"><b>€ ${Math.round(totalMoney).toLocaleString("de-DE")}</b><p>Privatvermögen</p></div>`;
+  list.innerHTML=residentAgents.map(a=>`
+    <div class="mission" style="cursor:pointer" data-resident="${a.id}">
+      <div style="display:flex;justify-content:space-between;gap:8px">
+        <b>${a.name}, ${a.age}</b><span style="color:#63e6a5;font-size:11px">${a.job}</span>
+      </div>
+      <p>${a.action} · ${a.personality}</p>
+      <p>Kontostand: € ${Math.round(a.balance).toLocaleString("de-DE")} · Glück: ${Math.round(a.happiness)}%</p>
+      <p style="color:#c5d2df">${a.thought}</p>
+    </div>`).join("");
+  list.querySelectorAll("[data-resident]").forEach(el=>el.onclick=()=>{
+    selectedResident=residentAgents.find(a=>a.id===el.dataset.resident);
+    if(selectedResident){
+      cameraTarget.set(selectedResident.mesh.position.x,0,selectedResident.mesh.position.z);
+      camera.position.set(selectedResident.mesh.position.x+12,12,selectedResident.mesh.position.z+12);
+      camera.lookAt(cameraTarget);
+      notify("👤 Du beobachtest jetzt "+selectedResident.name+".");
+    }
+  });
+}
+function updateResidents(dt){
+  if(!residentAgents.length)return;
+  residentDecisionClock+=dt;
+  residentEconomyClock+=dt;
+  for(const a of residentAgents)updateResidentMovement(a,dt);
+  if(residentDecisionClock>4){
+    residentDecisionClock=0;
+    for(const a of residentAgents){
+      if(!a.destination)residentChooseDestination(a);
+      else if(Math.random()<.12)residentChooseDestination(a);
+    }
+    refreshResidentPanel();
+  }
+  if(residentEconomyClock>24){
+    residentEconomyClock=0;
+    residentEconomyTick();
+  }
+}
+
+/* Residents are added to the existing save cycle without replacing the city save. */
+const originalCitySaveGame=saveGame;
+saveGame=function(){originalCitySaveGame();saveResidents();};
 
 /* =========================================================
    START
