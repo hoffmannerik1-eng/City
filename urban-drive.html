@@ -68,8 +68,8 @@ function addPedestrian(x,z){
  pedestrians.push({mesh:g,dir:Math.random()*Math.PI*2,change:2+Math.random()*5,pace:1.1+Math.random()*.7});
 }
 function spawnTraffic(){
- const vertical=Math.random()<.5, lane=Math.round((Math.random()*12-6))*gap;
- const dir=Math.random()<.5?1:-1, edge=790;
+ const vertical=Math.random()<.5, lane=Math.round((Math.random()*22-11))*gap;
+ const dir=Math.random()<.5?1:-1, edge=1250;
  const idx=Math.floor(Math.random()*cars.length),mesh=makeCar(idx);
  const laneOffset=dir>0? -4:4;
  if(vertical){mesh.position.set(lane+laneOffset,0,dir>0?edge:-edge);mesh.rotation.y=dir>0?0:Math.PI}
@@ -91,8 +91,8 @@ function expandOuterDistrict(){
  for(let i=-12;i<=12;i++)for(let j=-12;j<=12;j++){
   if(Math.abs(i)<=5&&Math.abs(j)<=5)continue;
   const cx=i*gap+55,cz=j*gap+55;
-  box(scene,road,.12,1800,material(0x292d32),i*gap,0,0);
-  box(scene,1800,.12,road,material(0x292d32),0,0,j*gap);
+  box(scene,road,.12,2800,material(0x292d32),i*gap,0,0);
+  box(scene,2800,.12,road,material(0x292d32),0,0,j*gap);
   if(Math.random()<.18){box(scene,78,.2,78,material(0x3e8547),cx,.02,cz);continue}
   const w=25+Math.random()*42,d=25+Math.random()*42,h=18+Math.random()*140;
   box(scene,w,h,d,material(colors[Math.floor(Math.random()*colors.length)]),cx,h/2,cz);
