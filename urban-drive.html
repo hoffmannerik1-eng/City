@@ -7,7 +7,7 @@
 <div id="start"><div id="box"><h1>URBAN DRIVE 3D</h1><p>Fahre durch eine große 3D-Stadt, wechsle Fahrzeuge und entkomme der Polizei.</p><p>WASD · SHIFT · SPACE · F · G · 1–5</p><button id="startBtn">SPIEL STARTEN</button></div></div>
 <div id="garage"><div id="box"><h1>DEINE GARAGE</h1><div id="preview">🏎️</div><h3 id="garageName">SPORTWAGEN</h3><div id="stats"></div><p>Farbe: <input id="paint" type="color" value="#e52b2b"></p><button class="alt" id="prev">◀</button><button class="alt" id="next">▶</button><br><button id="take">DIESES AUTO FAHREN</button><button class="alt" id="close">SCHLIESSEN</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script>if(!window.THREE){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>')}</script><script>
+<script>if(!window.THREE){document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></scr'+'ipt>')}</script><script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);if(!window.THREE){$('message').textContent='3D-Bibliothek nicht geladen. Bitte Seite neu laden.';$('startBtn').onclick=()=>{$('message').textContent='Die 3D-Bibliothek ist nicht erreichbar. Prüfe deine Internetverbindung.'};$('prev').onclick=()=>{$('message').textContent='Garage erst verfügbar, wenn das Spiel geladen ist.'};$('next').onclick=()=>{$('message').textContent='Garage erst verfügbar, wenn das Spiel geladen ist.'};$('close').onclick=()=>$('garage').style.display='none';return}
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb8ca);scene.fog=new THREE.Fog(0x9bb8ca,180,650);
