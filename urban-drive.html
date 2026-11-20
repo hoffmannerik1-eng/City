@@ -40,8 +40,8 @@ function spawnPolice(){let p=makeCar(0,true),a=Math.random()*Math.PI*2,r=80+Math
 function drawMap(){let c=$('map').getContext('2d');c.clearRect(0,0,150,150);c.fillStyle='#1d3927';c.fillRect(0,0,150,150);c.strokeStyle='#59615e';c.lineWidth=3;for(let i=-5;i<=5;i++){let q=75+i*gap*.12;c.beginPath();c.moveTo(q,0);c.lineTo(q,150);c.stroke();c.beginPath();c.moveTo(0,q);c.lineTo(150,q);c.stroke()}let x=75+player.position.x*.12,z=75+player.position.z*.12;c.fillStyle='#45ff9a';c.beginPath();c.arc(x,z,4,0,7);c.fill();c.fillStyle='#f33';police.forEach(p=>{c.beginPath();c.arc(75+p.mesh.position.x*.12,75+p.mesh.position.z*.12,3,0,7);c.fill()})}
 function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.05);if(started&&$('garage').style.display!=='flex'){
  trafficClock+=dt;
- if(trafficClock>=10){trafficClock-=10;spawnTraffic()}
- patrolClock+=dt;if(patrolClock>=10){patrolClock-=10;spawnPatrolPolice()}
+ if(trafficClock>=4){trafficClock-=4;spawnTraffic()}
+ patrolClock+=dt;if(patrolClock>=6){patrolClock-=6;spawnPatrolPolice()}
  for(let i=traffic.length-1;i>=0;i--){const t=traffic[i],m=t.mesh;
  let blocked=false;
  for(const other of traffic){if(other!==t&&Math.hypot(other.mesh.position.x-m.position.x,other.mesh.position.z-m.position.z)<7){blocked=true;break}}
@@ -86,15 +86,15 @@ function addParkedCars(){
  }
 }
 function expandOuterDistrict(){
- box(scene,1800,.22,1800,material(0x527d49),0,-.32,0);
- for(let i=-7;i<=7;i++){box(scene,road,.12,1800,material(0x292d32),i*gap,0,0);box(scene,1800,.12,road,material(0x292d32),0,0,i*gap)}
- for(let i=-7;i<=7;i++)for(let j=-7;j<=7;j++){
+ box(scene,2800,.22,2800,material(0x527d49),0,-.32,0);
+ for(let i=-12;i<=12;i++){box(scene,road,.12,2800,material(0x292d32),i*gap,0,0);box(scene,2800,.12,road,material(0x292d32),0,0,i*gap)}
+ for(let i=-12;i<=12;i++)for(let j=-12;j<=12;j++){
   if(Math.abs(i)<=5&&Math.abs(j)<=5)continue;
   const cx=i*gap+55,cz=j*gap+55;
   box(scene,road,.12,1800,material(0x292d32),i*gap,0,0);
   box(scene,1800,.12,road,material(0x292d32),0,0,j*gap);
   if(Math.random()<.18){box(scene,78,.2,78,material(0x3e8547),cx,.02,cz);continue}
-  const w=25+Math.random()*32,d=25+Math.random()*32,h=18+Math.random()*95;
+  const w=25+Math.random()*42,d=25+Math.random()*42,h=18+Math.random()*140;
   box(scene,w,h,d,material(colors[Math.floor(Math.random()*colors.length)]),cx,h/2,cz);
   for(let y=5;y<h-3;y+=8)for(let xx=-w/2+4;xx<w/2-2;xx+=7)box(scene,2.5,2.8,.12,glass,cx+xx,y,cz+d/2+.08);
  }
@@ -114,7 +114,7 @@ function nextPatrolTarget(p){
  p.mesh.rotation.y=Math.atan2(p.dx,p.dz);
 }
 function spawnPatrolPolice(){
- if(patrolPolice.length>=8){const old=patrolPolice.shift();scene.remove(old.mesh)}
+ if(patrolPolice.length>=18){const old=patrolPolice.shift();scene.remove(old.mesh)}
  const mesh=makeCar(0,true),a=Math.random()*4|0;
  const gx=Math.round(player.position.x/gap),gz=Math.round(player.position.z/gap);
  const x=THREE.MathUtils.clamp((gx+(Math.random()<.5?-3:3))*gap,-770,770);
