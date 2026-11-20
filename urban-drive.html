@@ -87,7 +87,8 @@ function addParkedCars(){
 }
 function expandOuterDistrict(){
  box(scene,1800,.22,1800,material(0x527d49),0,-.32,0);
- for(let i=-7;i<=7;i++){box(scene,road,.12,1800,material(0x292d32),i*gap,0,0);box(scene,1800,.12,road,material(0x292d32),0,0,i*gap)}\n for(let i=-7;i<=7;i++)for(let j=-7;j<=7;j++){
+ for(let i=-7;i<=7;i++){box(scene,road,.12,1800,material(0x292d32),i*gap,0,0);box(scene,1800,.12,road,material(0x292d32),0,0,i*gap)}
+ for(let i=-7;i<=7;i++)for(let j=-7;j<=7;j++){
   if(Math.abs(i)<=5&&Math.abs(j)<=5)continue;
   const cx=i*gap+55,cz=j*gap+55;
   box(scene,road,.12,1800,material(0x292d32),i*gap,0,0);
