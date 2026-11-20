@@ -41,6 +41,67 @@ function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta
 if(wanted>0){wantedTimer-=dt;if(wantedTimer<=0&&police.length===0)wanted=Math.max(0,wanted-1)}let count=Math.min(5,Math.ceil(wanted));while(police.length<count)spawnPolice();while(police.length>count)scene.remove(police.pop().mesh);for(let p of police){let m=p.mesh,dx=player.position.x-m.position.x,dz=player.position.z-m.position.z,dist=Math.hypot(dx,dz),targetAngle=Math.atan2(dx,dz),diff=Math.atan2(Math.sin(targetAngle-m.rotation.y),Math.cos(targetAngle-m.rotation.y));m.rotation.y+=THREE.MathUtils.clamp(diff,-dt*1.8,dt*1.8);if(dist>4){m.position.x+=Math.sin(m.rotation.y)*(18+wanted*4)*dt;m.position.z+=Math.cos(m.rotation.y)*(18+wanted*4)*dt}if(dist<7){speed*=Math.pow(.9,dt*60);wantedTimer=Math.max(wantedTimer,5)}}
 let offset=new THREE.Vector3(0,driving?6:3.5,driving?-12:-7).applyAxisAngle(new THREE.Vector3(0,1,0),angle);camera.position.lerp(target.position.clone().add(offset),1-Math.pow(.001,dt));camera.lookAt(target.position.clone().add(new THREE.Vector3(0,1,0)));drawMap()}
 $('speed').firstChild.textContent=driving?Math.round(Math.abs(speed)*3.6):'0';$('stars').textContent='★'.repeat(Math.floor(wanted))+'☆'.repeat(5-Math.floor(wanted));$('police').textContent=wanted>0?'POLIZEI SUCHT DICH':'Keine Fahndung';renderer.render(scene,camera)}
+
+/* CITY LIFE UPDATE: Verkehr, Fußgänger, Parkplätze und größere Karte */
+const traffic=[], pedestrians=[], parked=[];
+const trafficPaint=[0xeeeeee,0x202a38,0xb52b25,0x263d32,0xd5a52c,0x477a9c,0x777777];
+function addPedestrian(x,z){
+ const g=new THREE.Group(),skin=material([0xd5a17f,0xe8bd9b,0x9b6c50][Math.floor(Math.random()*3)]),shirt=material([0x2879b9,0xd34c43,0x3e9a68,0x444b58,0xd6b54b][Math.floor(Math.random()*5)]);
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(.23,.28,.85,7),shirt);body.position.y=.95;g.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.2,8,7),skin);head.position.y=1.55;g.add(head);
+ for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.14,.55,.16),material(0x303846));leg.position.set(side*.12,.28,0);g.add(leg)}
+ g.position.set(x,0,z);scene.add(g);
+ pedestrians.push({mesh:g,dir:Math.random()*Math.PI*2,change:2+Math.random()*5,pace:1.1+Math.random()*.7});
+}
+function spawnTraffic(){
+ const vertical=Math.random()<.5, lane=Math.round((Math.random()*12-6))*gap;
+ const dir=Math.random()<.5?1:-1, edge=790;
+ const idx=Math.floor(Math.random()*cars.length),mesh=makeCar(idx);
+ const laneOffset=dir>0? -4:4;
+ if(vertical){mesh.position.set(lane+laneOffset,0,dir>0?-edge:edge);mesh.rotation.y=dir>0?0:Math.PI}
+ else{mesh.position.set(dir>0?-edge:edge,0,lane+laneOffset);mesh.rotation.y=dir>0?Math.PI/2:-Math.PI/2}
+ mesh.traverse(o=>{if(o.material&&o.material.color)o.material.color.setHex(trafficPaint[Math.floor(Math.random()*trafficPaint.length)])});
+ traffic.push({mesh,vertical,dir,speed:8+Math.random()*5});
+}
+function addParkedCars(){
+ for(let i=0;i<42;i++){
+  const vertical=Math.random()<.5,roadIndex=Math.floor(Math.random()*11-5)*gap,along=(Math.random()*10-5)*gap+Math.random()*65;
+  const mesh=makeCar(Math.floor(Math.random()*cars.length));
+  if(vertical){mesh.position.set(roadIndex+(Math.random()<.5?-17:17),0,along);mesh.rotation.y=Math.PI/2}
+  else{mesh.position.set(along,0,roadIndex+(Math.random()<.5?-17:17));mesh.rotation.y=0}
+  mesh.scale.setScalar(.94);parked.push(mesh);
+ }
+}
+function expandOuterDistrict(){
+ box(scene,1800,.22,1800,material(0x527d49),0,-.32,0);
+ for(let i=-7;i<=7;i++)for(let j=-7;j<=7;j++){
+  if(Math.abs(i)<=5&&Math.abs(j)<=5)continue;
+  const cx=i*gap+55,cz=j*gap+55;
+  box(scene,road,.12,1800,material(0x292d32),i*gap,0,0);
+  box(scene,1800,.12,road,material(0x292d32),0,0,j*gap);
+  if(Math.random()<.18){box(scene,78,.2,78,material(0x3e8547),cx,.02,cz);continue}
+  const w=25+Math.random()*32,d=25+Math.random()*32,h=18+Math.random()*95;
+  box(scene,w,h,d,material(colors[Math.floor(Math.random()*colors.length)]),cx,h/2,cz);
+  for(let y=5;y<h-3;y+=8)for(let xx=-w/2+4;xx<w/2-2;xx+=7)box(scene,2.5,2.8,.12,glass,cx+xx,y,cz+d/2+.08);
+ }
+}
+expandOuterDistrict();addParkedCars();
+for(let i=0;i<64;i++){const x=(Math.random()*10-5)*gap+(Math.random()<.5?-19:19),z=(Math.random()*10-5)*gap+(Math.random()<.5?-19:19);addPedestrian(x,z)}
+let trafficClock=0;
+const originalDrawMap=drawMap;
+drawMap=function(){
+ const c=$('map').getContext('2d');c.clearRect(0,0,150,150);c.fillStyle='#243b2c';c.fillRect(0,0,150,150);
+ const scale=.48,px=player.position.x,pz=player.position.z;
+ c.strokeStyle='#747a78';c.lineWidth=7;
+ for(let i=-8;i<=8;i++){let x=75+(i*gap-px)*scale,z=75+(i*gap-pz)*scale;c.beginPath();c.moveTo(x,0);c.lineTo(x,150);c.stroke();c.beginPath();c.moveTo(0,z);c.lineTo(150,z);c.stroke()}
+ c.fillStyle='#c5c7c4';c.fillRect(4,4,142,142);
+ c.fillStyle='#3e8547';for(let i=-8;i<=8;i++)for(let j=-8;j<=8;j++){let x=75+(i*gap+55-px)*scale,z=75+(j*gap+55-pz)*scale;if(x>2&&x<148&&z>2&&z<148&&Math.random()<.015)c.fillRect(x-3,z-3,6,6)}
+ c.fillStyle='#45ff9a';c.beginPath();c.arc(75,75,4,0,7);c.fill();
+ c.fillStyle='#ef4141';for(const p of police){let x=75+(p.mesh.position.x-px)*scale,z=75+(p.mesh.position.z-pz)*scale;if(x>0&&x<150&&z>0&&z<150){c.beginPath();c.arc(x,z,3,0,7);c.fill()}}
+ c.fillStyle='#f3d36a';for(const t of traffic){let x=75+(t.mesh.position.x-px)*scale,z=75+(t.mesh.position.z-pz)*scale;if(x>0&&x<150&&z>0&&z<150){c.fillRect(x-2,z-2,4,4)}}
+};
+const oldAnimate=animate;
+
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 })();
 </script></body></html>
